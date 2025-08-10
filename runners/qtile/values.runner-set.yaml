@@ -22,7 +22,7 @@ template:
     containers:
       - name: runner
         imagePullPolicy: Always
-        image: ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-24.04
+        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-24.04
         command: ["/home/runner/run.sh"]
         env:
           - name: ACTIONS_RUNNER_CONTAINER_HOOKS
