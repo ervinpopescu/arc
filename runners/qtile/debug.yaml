@@ -5,8 +5,8 @@ metadata:
   namespace: qtile-runners
 spec:
   containers:
-  - name: ubuntu
-    image: ubuntu:latest
+  - name: qtile-debug-runner
+    image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-24.04"
     command: ["/bin/bash"]
     args: ["-c", "sleep infinity"]
     volumeMounts:
