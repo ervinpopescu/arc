@@ -2,6 +2,9 @@
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-noble AS build
 
+LABEL org.opencontainers.image.description="Base custom runner image"
+LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/main/images/base"
+
 # Replace value with the latest runner release version
 # source: https://github.com/actions/runner/releases
 # ex: 2.303.0
