@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug
+  namespace: arc-runners
+spec:
+  containers:
+  - name: arc-debug-runner
+    image: "ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-24.04"
+    command: ["/bin/bash"]
+    args: ["-c", "sleep infinity"]
+    volumeMounts:
+    - name: debug-volume
+      mountPath: /opt/hostedtoolcache
+    stdin: true
+    tty: true
+  volumes:
+  - name: debug-volume
+    persistentVolumeClaim:
+      claimName: tool-cache-runnerset
+  restartPolicy: Never
