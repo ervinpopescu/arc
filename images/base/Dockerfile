@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-noble AS build
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS build
 
 LABEL org.opencontainers.image.description="Base custom runner image"
 LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/main/images/base"
@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/
 # Replace value with the latest runner release version
 # source: https://github.com/actions/runner/releases
 # ex: 2.303.0
-ARG RUNNER_VERSION="2.327.0"
+ARG RUNNER_VERSION="2.328.0"
 ARG RUNNER_ARCH="x64"
 # Replace value with the latest runner-container-hooks release version
 # source: https://github.com/actions/runner-container-hooks/releases

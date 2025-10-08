@@ -1,0 +1,14 @@
+[Unit]
+Description=Port forwarding for prometheus-k8s
+
+[Service]
+ExecStart=kubectl --namespace default port-forward svc/prometheus-operated 9092:9090
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutSec=0
+RestartSec=2
+Restart=always
+Type=simple
+KillMode=mixed
+
+[Install]
+WantedBy=default.target

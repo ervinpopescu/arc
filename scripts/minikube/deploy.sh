@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-if [[ "$1" -eq "" ]]; then
+if [[ "$1" = "" ]]; then
   echo "Usage: $(basename $0) <path to defaults.sh>"
   exit
 fi
@@ -36,7 +36,7 @@ helm_install() {
     --create-namespace \
     ${values:+--values "$values"} \
     "$chart" \
-    --wait --timeout 5s
+    --wait
   echo
 }
 
@@ -78,3 +78,5 @@ helm_install "$INSTALLATION_NAME" "$NAMESPACE" \
   "$OVERRIDES_PATH"
 
 kubectl apply -f "$TOOLCACHE_PVC_YAML"
+
+helm install prom-stack oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack --set grafana.enabled=false
