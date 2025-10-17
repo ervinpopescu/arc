@@ -9,6 +9,11 @@ spec:
     image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-24.04"
     command: ["/bin/bash"]
     args: ["-c", "sleep infinity"]
+    env:
+      - name: RUSTUP_HOME
+        value: "/opt/hostedtoolcache/rustup"
+      - name: CARGO_HOME
+        value: "/opt/hostedtoolcache/cargo"
     volumeMounts:
     - name: debug-volume
       mountPath: /opt/hostedtoolcache
