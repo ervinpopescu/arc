@@ -1,9 +1,9 @@
 #!/bin/bash
 set -eo pipefail
 
-if [[ "$1" -eq "" ]]; then
+if [[ "$1" == "" ]]; then
   echo "Usage: $(basename $0) <path to defaults.sh>"
-  exit
+  exit 1
 fi
 source "$1"
 
@@ -15,7 +15,11 @@ source "$1"
 
 # Prompt with default support
 prompt() {
-  local msg=$1 default=$2 var
+  local msg=$1 default=$2 var_name=$3 var
+  if [[ -n "${!var_name}" ]]; then
+    echo "${!var_name}"
+    return
+  fi
   read -rp "$msg [$default]: " var
   echo "${var:-$default}"
 }
@@ -43,9 +47,15 @@ delete_secret() {
 # Optionally delete namespace
 delete_namespace() {
   local ns=$1
-  read -rp "Do you also want to delete namespace '$ns'? [y/N]: " confirm
+  if [[ "$FORCE_DELETE_NAMESPACE" == "true" ]]; then
+    confirm="y"
+  else
+    read -rp "Do you also want to delete namespace '$ns'? [y/N]: " confirm
+  fi
+  
   if [[ "${confirm,,}" == "y" ]]; then
-    kubectl delete ns "$ns" --ignore-not-found --timeout 5s || $(basename $0)/cleanup-ns.sh $ns
+    echo "Deleting namespace $ns..."
+    kubectl delete ns "$ns" --ignore-not-found --timeout 30s || ./scripts/minikube/cleanup-ns.sh "$ns"
     echo "✅ Namespace $ns deleted"
   else
     echo "⏩ Namespace $ns preserved"
@@ -54,17 +64,17 @@ delete_namespace() {
 }
 
 # --- Runner chart cleanup ---
-INSTALLATION_NAME=$(prompt "Helm release name for runner chart" "$DEFAULT_RUNNERSET_INSTALLATION_NAME")
-NAMESPACE=$(prompt "Runners namespace" "$DEFAULT_RUNNERS_NAMESPACE")
-SECRET_NAME=$(prompt "Kubernetes secret name" "$DEFAULT_SECRET_NAME")
+RUNNER_INSTALLATION_NAME=$(prompt "Helm release name for runner chart" "$DEFAULT_RUNNERSET_INSTALLATION_NAME" "RUNNER_INSTALLATION_NAME")
+RUNNER_NAMESPACE=$(prompt "Runners namespace" "$DEFAULT_RUNNERS_NAMESPACE" "RUNNER_NAMESPACE")
+SECRET_NAME=$(prompt "Kubernetes secret name" "$DEFAULT_SECRET_NAME" "SECRET_NAME")
 
-helm_uninstall "$INSTALLATION_NAME" "$NAMESPACE"
-delete_secret "$SECRET_NAME" "$NAMESPACE"
-delete_namespace "$NAMESPACE"
+helm_uninstall "$RUNNER_INSTALLATION_NAME" "$RUNNER_NAMESPACE"
+delete_secret "$SECRET_NAME" "$RUNNER_NAMESPACE"
+delete_namespace "$RUNNER_NAMESPACE"
 
 # --- Controller chart cleanup ---
-INSTALLATION_NAME=$(prompt "Helm release name for controller chart" "$DEFAULT_ARC_INSTALLATION_NAME")
-NAMESPACE=$(prompt "Systems namespace (controller ns)" "$DEFAULT_ARC_NAMESPACE")
+INSTALLATION_NAME=$(prompt "Helm release name for controller chart" "$DEFAULT_ARC_INSTALLATION_NAME" "INSTALLATION_NAME")
+NAMESPACE=$(prompt "Systems namespace (controller ns)" "$DEFAULT_ARC_NAMESPACE" "NAMESPACE")
 
 helm_uninstall "$INSTALLATION_NAME" "$NAMESPACE"
 delete_namespace "$NAMESPACE"
