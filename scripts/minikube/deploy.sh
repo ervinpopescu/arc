@@ -7,6 +7,12 @@ if [[ "$1" == "" ]]; then
 fi
 source "$1"
 
+# Ensure helm-diff plugin is installed
+if ! helm plugin list | grep -q "diff"; then
+  echo "📥 Installing helm-diff plugin..."
+  helm plugin install https://github.com/databus23/helm-diff --verify=false
+fi
+
 [ -z "$DEFAULT_ARC_INSTALLATION_NAME" ] && export DEFAULT_ARC_INSTALLATION_NAME="arc"
 [ -z "$DEFAULT_ARC_NAMESPACE" ] && export DEFAULT_ARC_NAMESPACE="arc-systems"
 [ -z "$DEFAULT_RUNNERSET_INSTALLATION_NAME" ] && export DEFAULT_RUNNERSET_INSTALLATION_NAME="arc-runner-set"
@@ -26,21 +32,46 @@ prompt() {
   echo "${var:-$default}"
 }
 
-# Helm wrapper for idempotent installs
+# Helm wrapper for idempotent installs with change detection
 helm_install() {
-  local name=$1 ns=$2 chart=$3 values=${4:-}
-  echo "Installing chart: $chart"
-  echo "  Release: $name"
-  echo "  Namespace: $ns"
+  local name=$1 ns=$2 chart=$3 values=${4:-} extra_args=${5:-}
+
+  echo "Checking release: $name in namespace: $ns"
+
+  if helm status "$name" -n "$ns" >/dev/null 2>&1; then
+    if [[ "$FORCE_UPGRADE" == "true" ]]; then
+      echo "  Forcing upgrade as requested..."
+    else
+      # Check for changes using helm-diff
+      echo "  Checking for changes..."
+      if helm diff upgrade "$name" "$chart" \
+        --namespace "$ns" \
+        ${values:+--values "$values"} \
+        $extra_args \
+        --detailed-exitcode >/dev/null 2>&1; then
+        echo "  ✅ No changes detected. Skipping upgrade."
+        echo
+        return
+      fi
+      echo "  🟡 Changes detected. Upgrading..."
+    fi
+  else
+    echo "  🚀 Release does not exist. Installing..."
+  fi
+
+  echo "  Chart: $chart"
   if [[ -n "$values" ]]; then
     echo "  Values: $values"
   fi
+
   helm upgrade --install "$name" \
     --namespace "$ns" \
     --create-namespace \
     ${values:+--values "$values"} \
     "$chart" \
-    --wait
+    --wait \
+    --timeout 15m0s \
+    $extra_args
   echo
 }
 
@@ -83,9 +114,13 @@ helm_install "$RUNNER_INSTALLATION_NAME" "$RUNNER_NAMESPACE" \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   "$OVERRIDES_PATH"
 
-kubectl apply -f "$TOOLCACHE_PVC_YAML"
+# kubectl apply -f "$TOOLCACHE_PVC_YAML"
 
-helm upgrade --install prom-stack oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  --set grafana.enabled=false
+# # --- Prometheus stack ---
+# # We use a temporary file for the prometheus values since it was just a --set flag before
+# # but to use the comparison logic we need a file or we just skip comparison.
+# # For simplicity, we just refactor it to use helm_install with no values file which will skip if already deployed.
+# helm_install "prom-stack" "monitoring" \
+#   "oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack" \
+#   "" \
+#   "--set grafana.enabled=false"

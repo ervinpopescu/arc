@@ -1,8 +1,8 @@
 #!/bin/bash
 
 IMAGES=(
-  ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-24.04
-  ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-24.04
+  ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04
+  ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
 )
 
 DIRS=(
