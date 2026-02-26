@@ -36,8 +36,8 @@ jobs:
       - name: Lint manifests
         run: make test-manifests
 
-  build-base:
-    name: Build Base Runner
+  build-and-test:
+    name: Build and Test Images
     needs: lint
     runs-on: ubuntu-latest
     permissions:
@@ -57,8 +57,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      # --- Base Image ---
+      - name: Extract metadata (Base)
+        id: meta-base
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/arc-custom-runner
@@ -66,55 +67,20 @@ jobs:
             type=raw,value=ubuntu-26.04
             type=sha,format=short
 
-      - name: Build and Load
+      - name: Build and Load (Base)
         uses: docker/build-push-action@v5
         with:
           context: ./images/base
           load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-base.outputs.tags }}
+          labels: ${{ steps.meta-base.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: Test image
-        run: make test-images
-
-      - name: Push image
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
-        with:
-          context: ./images/base
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-
-  build-qtile:
-    name: Build Qtile Runner
-    needs: build-base
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
+      # --- Qtile Image (Benefits from Base Cache) ---
+      - name: Extract metadata (Qtile)
+        id: meta-qtile
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-custom-runner
@@ -122,29 +88,42 @@ jobs:
             type=raw,value=ubuntu-26.04
             type=sha,format=short
 
-      - name: Build and Load
+      - name: Build and Load (Qtile)
         uses: docker/build-push-action@v5
         with:
           context: ./images/qtile
           load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-qtile.outputs.tags }}
+          labels: ${{ steps.meta-qtile.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: Test image
+      # --- Validation ---
+      - name: Test images
         run: make test-images
 
-      - name: Build and push
+      # --- Conditional Push (using the same tags built above) ---
+      - name: Push Base image
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./images/base
+          push: true
+          tags: ${{ steps.meta-base.outputs.tags }}
+          labels: ${{ steps.meta-base.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Push Qtile image
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./images/qtile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-qtile.outputs.tags }}
+          labels: ${{ steps.meta-qtile.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
-
