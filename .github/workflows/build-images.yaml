@@ -39,7 +39,6 @@ jobs:
   build-base:
     name: Build Base Runner
     needs: lint
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -82,6 +81,7 @@ jobs:
         run: make test-images
 
       - name: Push image
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./images/base
@@ -95,7 +95,6 @@ jobs:
   build-qtile:
     name: Build Qtile Runner
     needs: build-base
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -138,6 +137,7 @@ jobs:
         run: make test-images
 
       - name: Build and push
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./images/qtile
