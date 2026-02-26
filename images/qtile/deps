@@ -10,8 +10,6 @@ gir1.2-notify-0.7
 graphviz
 imagemagick
 libcairo2-dev
-libd3dadapter9-mesa
-libd3dadapter9-mesa-dev
 libdbus-1-dev
 libegl-mesa0
 libegl1-mesa-dev
@@ -23,7 +21,7 @@ libgdk-pixbuf-2.0-0
 libgirepository-2.0-dev
 libgl1-mesa-dev
 libgl1-mesa-dri
-libglapi-mesa
+mesa-libgallium
 libgles2-mesa-dev
 libglx-mesa0
 libinput-dev
@@ -42,7 +40,7 @@ libgcrypt20
 libgcrypt20-dev
 libssl-dev
 libtirpc-dev
-libwlroots-dev
+libwlroots-0.19-dev
 libxatracker-dev
 libxatracker2
 libxcb-composite0-dev
@@ -63,7 +61,8 @@ libxshmfence-dev
 meson
 ninja-build
 pkg-config
-policykit-1
+polkitd
+pkexec
 quilt
 scdoc
 xfonts-utils
