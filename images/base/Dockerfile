@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble AS build
+FROM mcr.microsoft.com/dotnet/runtime-deps:11.0-preview-resolute-amd64 AS build
 
 LABEL org.opencontainers.image.description="Base custom runner image"
 LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/main/images/base"
@@ -8,19 +8,19 @@ LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/
 # Replace value with the latest runner release version
 # source: https://github.com/actions/runner/releases
 # ex: 2.303.0
-ARG RUNNER_VERSION="2.328.0"
+ARG RUNNER_VERSION="2.331.0"
 ARG RUNNER_ARCH="x64"
 # Replace value with the latest runner-container-hooks release version
 # source: https://github.com/actions/runner-container-hooks/releases
 # ex: 0.3.1
-ARG RUNNER_CONTAINER_HOOKS_VERSION="0.7.0"
+ARG RUNNER_CONTAINER_HOOKS_VERSION="0.8.1"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 
 COPY ./deps /deps
-RUN apt update -y && apt install curl unzip adduser sudo git gcc g++ wget vim jq $(cat /deps) -y
+RUN apt update -y && apt install build-essential curl unzip adduser sudo git gcc g++ wget vim jq $(cat /deps) -y
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \
   && groupadd docker --gid 123 \
