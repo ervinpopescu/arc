@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug
+  namespace: qtile-runners
+spec:
+  securityContext:
+    fsGroup: 123
+  initContainers:
+  - name: fix-permissions
+    image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+    command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
+    volumeMounts:
+    - name: debug-volume
+      mountPath: /opt/hostedtoolcache
+  containers:
+  - name: qtile-debug-runner
+    image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+    command: ["/bin/bash"]
+    args: ["-c", "sleep infinity"]
+    env:
+      - name: RUSTUP_HOME
+        value: "/opt/hostedtoolcache/rustup"
+      - name: CARGO_HOME
+        value: "/opt/hostedtoolcache/cargo"
+      - name: UV_CACHE_DIR
+        value: "/opt/hostedtoolcache/uv/cache"
+      - name: PATH
+        value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hostedtoolcache/cargo/bin:/opt/hostedtoolcache/uv/bin"
+    volumeMounts:
+    - name: debug-volume
+      mountPath: /opt/hostedtoolcache
+    stdin: true
+    tty: true
+  volumes:
+  - name: debug-volume
+    persistentVolumeClaim:
+      claimName: tool-cache-runnerset
+  restartPolicy: Never

@@ -10,6 +10,12 @@ if [[ -z "$NAMESPACE" ]]; then
   exit 1
 fi
 
+read -rp "⚠️  Are you sure you want to FORCE cleanup namespace '$NAMESPACE'? [y/N]: " confirm
+if [[ "${confirm,,}" != "y" ]]; then
+  echo "❌ Cleanup cancelled."
+  exit 0
+fi
+
 echo "🔎 Checking for stuck resources in namespace: $NAMESPACE"
 
 # Get all resource types (excluding non-namespaced types)

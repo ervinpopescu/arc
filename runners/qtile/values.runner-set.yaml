@@ -2,17 +2,29 @@ githubConfigUrl: "https://github.com/ervinpopescu/qtile-cmd-client"
 
 githubConfigSecret: "pre-defined-secret"
 
+controllerServiceAccount:
+  namespace: "arc-systems"
+  name: "arc-gha-rs-controller"
+
+keyVault:
+  type: ""
+
+resourceMeta:
+  noPermissionServiceAccount:
+    annotations: {}
+    name: ""
+
 maxRunners: 8
 
 minRunners: 0
 
 template:
   spec:
-    # securityContext:
-    #   fsGroup: 123
+    securityContext:
+      fsGroup: 123
     initContainers:
       - name: kube-init
-        image: ghcr.io/actions/actions-runner:latest
+        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
         command: ["sudo", "chown", "-R", "1001:123", "/home/runner/_work", "/opt/hostedtoolcache"]
         volumeMounts:
           - name: work
@@ -22,7 +34,7 @@ template:
     containers:
       - name: runner
         imagePullPolicy: Always
-        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-24.04
+        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
         command: ["/home/runner/run.sh"]
         env:
           - name: ACTIONS_RUNNER_CONTAINER_HOOKS
