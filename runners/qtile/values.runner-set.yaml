@@ -1,6 +1,8 @@
 githubConfigUrl: "https://github.com/ervinpopescu/qtile-cmd-client"
 
-githubConfigSecret: "pre-defined-secret"
+githubConfigSecret:
+  name: "pre-defined-secret"
+  github_token: "placeholder"
 
 controllerServiceAccount:
   namespace: "arc-systems"
@@ -22,20 +24,18 @@ template:
   spec:
     securityContext:
       fsGroup: 123
-    initContainers:
-      - name: kube-init
-        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
-        command: ["sudo", "chown", "-R", "1001:123", "/home/runner/_work", "/opt/hostedtoolcache"]
-        volumeMounts:
-          - name: work
-            mountPath: /home/runner/_work
-          - name: tool-cache
-            mountPath: /opt/hostedtoolcache
     containers:
       - name: runner
         imagePullPolicy: Always
         image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
         command: ["/home/runner/run.sh"]
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
         env:
           - name: ACTIONS_RUNNER_CONTAINER_HOOKS
             value: /home/runner/k8s/index.js
