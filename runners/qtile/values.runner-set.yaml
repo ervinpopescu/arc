@@ -1,8 +1,6 @@
 githubConfigUrl: "https://github.com/ervinpopescu/qtile-cmd-client"
 
-githubConfigSecret:
-  name: "pre-defined-secret"
-  github_token: "placeholder"
+githubConfigSecret: "pre-defined-secret"
 
 controllerServiceAccount:
   namespace: "arc-systems"
