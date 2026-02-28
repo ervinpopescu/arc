@@ -7,6 +7,12 @@ if [[ "$1" == "" ]]; then
 fi
 source "$1"
 
+# Load local .env if it exists in the project root
+if [[ -f ".env" ]]; then
+  echo "🔌 Loading environment variables from .env..."
+  export $(grep -v '^#' .env | xargs)
+fi
+
 # Ensure helm-diff plugin is installed
 if ! helm plugin list | grep -q "diff"; then
   echo "📥 Installing helm-diff plugin..."
