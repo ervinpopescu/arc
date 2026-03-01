@@ -23,7 +23,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     $(cat /deps) \
     && rm -rf /var/lib/apt/lists/*
 
-# Re-apply sudoers config to be safe
+# Re-apply sudoers config to be safe and ensure runner is in the sudo group
 RUN usermod -aG sudo runner \
     && echo "%sudo ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
     && chmod 0440 /etc/sudoers.d/runner \
