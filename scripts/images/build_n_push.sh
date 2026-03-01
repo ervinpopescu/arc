@@ -18,7 +18,13 @@ DIRS=(
 
 for i in "${!IMAGES[@]}"; do
   echo "🛠️  Building image: ${IMAGES[i]}..."
-  docker buildx build -t "${IMAGES[i]}" "${DIRS[i]}" --load --progress=plain
+  docker buildx build --platform linux/amd64 -t "${IMAGES[i]}" "${DIRS[i]}" --load --progress=plain
+
+  # Tag the base image locally so dependent images use the local version
+  if [[ "${IMAGES[i]}" == *"arc-custom-runner"* ]]; then
+    echo "🏷️  Tagging ${IMAGES[i]} as arc-base:local..."
+    docker tag "${IMAGES[i]}" arc-base:local
+  fi
 
   if [[ "$PUSH_IMAGES" == "true" ]]; then
     echo "🚀 Pushing image: ${IMAGES[i]}..."

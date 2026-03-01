@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Build on our new, optimized base image
-FROM ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04
+FROM arc-base:local
 
 LABEL org.opencontainers.image.description="https://github.com/qtile/qtile custom runner image"
 LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/main/images/qtile"
@@ -19,6 +19,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     wget \
     vim-tiny \
     jq \
+    sudo \
     $(cat /deps) \
     && rm -rf /var/lib/apt/lists/*
 

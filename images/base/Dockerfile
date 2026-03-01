@@ -43,13 +43,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim-tiny \
     ca-certificates \
     passwd \
+    sudo \
     $(cat /deps) \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup runner user and group
-# We remove NOPASSWD:ALL for security; permissions are handled via fsGroup: 123 in K8s
 RUN groupadd -g 123 runner-group \
-    && useradd -m -d /home/runner -s /bin/bash -u 1001 -g runner-group runner
+    && useradd -m -d /home/runner -s /bin/bash -u 1001 -g runner-group runner \
+    && usermod -aG sudo runner \
+    && echo "%sudo ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner \
+    && echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" > /etc/sudoers.d/env_keep \
+    && chmod 0440 /etc/sudoers.d/env_keep
 
 WORKDIR /home/runner
 
