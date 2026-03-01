@@ -23,4 +23,11 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     $(cat /deps) \
     && rm -rf /var/lib/apt/lists/*
 
+# Re-apply sudoers config to be safe
+RUN usermod -aG sudo runner \
+    && echo "%sudo ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
+    && chmod 0440 /etc/sudoers.d/runner \
+    && echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" > /etc/sudoers.d/env_keep \
+    && chmod 0440 /etc/sudoers.d/env_keep
+
 USER runner
