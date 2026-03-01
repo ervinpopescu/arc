@@ -5,7 +5,7 @@ ifneq (,$(wildcard ./.env))
 	export
 endif
 
-.PHONY: help build push deploy-base deploy-qtile deploy-monitoring get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all
+.PHONY: help build push deploy-base deploy-qtile deploy-monitoring deploy-vpa deploy-infra get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all pre-commit
 
 help:
 	@echo "Usage: make [target]"
@@ -16,6 +16,8 @@ help:
 	@echo "  deploy-base               Deploy base runner scale set"
 	@echo "  deploy-qtile              Deploy qtile runner scale set"
 	@echo "  deploy-monitoring         Deploy lightweight Prometheus and VPA"
+	@echo "  deploy-vpa                Apply VPA runner policies"
+	@echo "  deploy-infra              Deploy both monitoring and VPA"
 	@echo "  get-vpa-recommendations   View current VPA resource suggestions"
 	@echo "  undeploy-base             Undeploy base runner scale set"
 	@echo "  undeploy-qtile            Undeploy qtile runner scale set"
@@ -26,6 +28,7 @@ help:
 	@echo "  test-manifests            Lint and template Helm manifests"
 	@echo "  test-cluster              Verify live cluster state and PVC access"
 	@echo "  test-all                  Run all automated tests"
+	@echo "  pre-commit                Run pre-commit hooks on all files"
 
 build:
 	./scripts/images/build_n_push.sh
@@ -61,6 +64,9 @@ test-cluster:
 	./tests/cluster/verify_health.sh
 
 test-all: test-manifests test-images
+
+pre-commit:
+	pre-commit run --all-files
 
 deploy-base:
 	./scripts/minikube/deploy.sh runners/base/defaults.sh

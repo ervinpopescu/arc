@@ -9,6 +9,7 @@ LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/
 USER root
 
 COPY ./deps /deps
+# hadolint ignore=DL3008,SC2046
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     unzip \

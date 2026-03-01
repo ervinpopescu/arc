@@ -15,7 +15,8 @@ test_image() {
     docker run --rm "$image" jq --version >/dev/null
 
     # Check runner user
-    local uid=$(docker run --rm "$image" id -u)
+    local uid
+    uid=$(docker run --rm "$image" id -u)
     if [ "$uid" != "1001" ]; then
         echo "❌ User ID is not 1001 (found $uid)"
         exit 1
@@ -29,10 +30,7 @@ test_qtile_specifics() {
     # Check for extra tools if any (gcc, g++, etc)
     docker run --rm "$QTILE_IMAGE" gcc --version >/dev/null
     docker run --rm "$QTILE_IMAGE" g++ --version >/dev/null
-    
-    # Check for env vars (RUSTUP_HOME, CARGO_HOME, UV_CACHE_DIR are set in values.yaml but lets check image defaults or if they exist)
-    # The Dockerfile doesn't set them, the Helm chart does.
-    
+
     echo "✅ Qtile image passed specific checks."
 }
 

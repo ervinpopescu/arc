@@ -35,7 +35,7 @@ This repository provides a complete, automated environment for managing **Action
 
 ## Development Conventions
 - **Branching:** New features and infrastructure changes should be developed on `setup-arc` and merged via PR.
-- **CI/CD:** 
+- **CI/CD:**
   - `lint` job runs on all branches.
   - `build` and `test` run on all branches to ensure integrity.
   - `push` is strictly limited to the `main` branch.

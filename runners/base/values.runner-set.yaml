@@ -1,8 +1,6 @@
-githubConfigUrl: "WRONG_URL_PLEASE_SET_IN_VALUES_YAML"
+githubConfigUrl: "https://github.com/ervinpopescu/arc"
 
-githubConfigSecret:
-  name: "pre-defined-secret"
-  github_token: "placeholder"
+githubConfigSecret: "pre-defined-secret"
 
 controllerServiceAccount:
   namespace: "arc-systems"
@@ -63,4 +61,4 @@ template:
         persistentVolumeClaim:
           claimName: tool-cache-runnerset
 
-namespaceOverride: "arc-runners"
+namespaceOverride: "base-runners"

@@ -20,31 +20,31 @@ jobs:
         run: |
           # Get all versions of the package
           versions=$(gh api /user/packages/container/${{ matrix.package_name }}/versions --paginate --jq '.[] | {id: .id, created_at: .created_at, tags: .metadata.container.tags}')
-          
+
           # Current date in seconds
           now=$(date +%s)
           # 3 months in seconds (approx 90 days)
           three_months=$((90 * 24 * 60 * 60))
-          
+
           echo "$versions" | jq -c '.' | while read -r version; do
             id=$(echo "$version" | jq -r '.id')
             created_at=$(echo "$version" | jq -r '.created_at')
             tags=$(echo "$version" | jq -r '.tags[]' 2>/dev/null || echo "")
-            
+
             created_secs=$(date -d "$created_at" +%s)
             age=$((now - created_secs))
-            
+
             # Keep if younger than 3 months
             if [ "$age" -lt "$three_months" ]; then
               continue
             fi
-            
+
             # Keep if it has important tags
             if echo "$tags" | grep -qE "ubuntu-26.04|ubuntu-24.04"; then
               echo "Keeping version $id (age: $((age/86400)) days) because it has important tags: $tags"
               continue
             fi
-            
+
             echo "Deleting version $id (age: $((age/86400)) days)..."
             gh api --method DELETE /user/packages/container/${{ matrix.package_name }}/versions/$id
           done

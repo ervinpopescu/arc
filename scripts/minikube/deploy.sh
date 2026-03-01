@@ -2,14 +2,16 @@
 set -eo pipefail
 
 if [[ "$1" == "" ]]; then
-  echo "Usage: $(basename $0) <path to defaults.sh>"
+  echo "Usage: $(basename "$0") <path to defaults.sh>"
   exit 1
 fi
+# shellcheck source=/dev/null
 source "$1"
 
 # Load local .env if it exists in the project root
 if [[ -f ".env" ]]; then
   echo "🔌 Loading environment variables from .env..."
+  # shellcheck disable=SC2046
   export $(grep -v '^#' .env | xargs)
 fi
 
@@ -53,7 +55,7 @@ helm_install() {
       if helm diff upgrade "$name" "$chart" \
         --namespace "$ns" \
         ${values:+--values "$values"} \
-        $extra_args \
+        "$extra_args" \
         --detailed-exitcode >/dev/null 2>&1; then
         echo "  ✅ No changes detected. Skipping upgrade."
         echo
@@ -77,7 +79,7 @@ helm_install() {
     "$chart" \
     --wait \
     --timeout 15m0s \
-    $extra_args
+    "$extra_args"
   echo
 }
 

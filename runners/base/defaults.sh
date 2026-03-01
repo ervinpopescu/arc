@@ -1,3 +1,4 @@
+#!/bin/bash
 export DEFAULT_ARC_INSTALLATION_NAME="arc"
 export DEFAULT_ARC_NAMESPACE="arc-systems"
 export DEFAULT_RUNNERSET_INSTALLATION_NAME="base"
