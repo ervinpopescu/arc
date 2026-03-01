@@ -19,7 +19,7 @@ DIRS=(
 for i in "${!IMAGES[@]}"; do
   echo "🛠️  Building image: ${IMAGES[i]}..."
   docker buildx build -t "${IMAGES[i]}" "${DIRS[i]}" --load --progress=plain
-  
+
   if [[ "$PUSH_IMAGES" == "true" ]]; then
     echo "🚀 Pushing image: ${IMAGES[i]}..."
     docker push "${IMAGES[i]}"

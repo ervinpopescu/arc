@@ -7,7 +7,8 @@ ARG RUNNER_VERSION="2.331.0"
 ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION="0.8.1"
 
-RUN apt-get update && apt-get install -y curl unzip
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip
 
 WORKDIR /home/runner
 
@@ -33,6 +34,7 @@ ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 
 # Install runtime dependencies ONLY
 COPY ./deps /deps
+# hadolint ignore=DL3008,SC2046
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \

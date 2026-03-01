@@ -2,9 +2,10 @@
 set -eo pipefail
 
 if [[ "$1" == "" ]]; then
-  echo "Usage: $(basename $0) <path to defaults.sh>"
+  echo "Usage: $(basename "$0") <path to defaults.sh>"
   exit 1
 fi
+# shellcheck source=/dev/null
 source "$1"
 
 [ -z "$DEFAULT_ARC_INSTALLATION_NAME" ] && export DEFAULT_ARC_INSTALLATION_NAME="arc"
@@ -52,7 +53,7 @@ delete_namespace() {
   else
     read -rp "Do you also want to delete namespace '$ns'? [y/N]: " confirm
   fi
-  
+
   if [[ "${confirm,,}" == "y" ]]; then
     echo "Deleting namespace $ns..."
     kubectl delete ns "$ns" --ignore-not-found --timeout 30s || ./scripts/minikube/cleanup-ns.sh "$ns"
