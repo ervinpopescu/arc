@@ -12,6 +12,7 @@ test_image() {
     # Check for basic binaries
     docker run --rm "$image" git --version >/dev/null
     docker run --rm "$image" curl --version >/dev/null
+    docker run --rm "$image" sudo --version >/dev/null
     docker run --rm "$image" jq --version >/dev/null
 
     # Check runner user
@@ -21,6 +22,9 @@ test_image() {
         echo "❌ User ID is not 1001 (found $uid)"
         exit 1
     fi
+
+    # Check sudo access
+    docker run --rm "$image" sudo whoami >/dev/null
 
     echo "✅ Image $name passed basic checks."
 }
