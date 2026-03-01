@@ -19,19 +19,14 @@ DIRS=(
 for i in "${!IMAGES[@]}"; do
   echo "🛠️  Building image: ${IMAGES[i]}..."
 
-  EXTRA_ARGS=()
-  # Map the local base tag to the freshly built base image for dependent builds
-  if [[ "${IMAGES[i]}" == *"qtile"* ]]; then
-    EXTRA_ARGS+=(--build-context "arc-base:local=docker-image://${IMAGES[0]}")
-  fi
+  docker buildx build --platform linux/amd64 -t "${IMAGES[i]}" "${DIRS[i]}" --load --progress=plain
 
-  docker buildx build --platform linux/amd64 "${EXTRA_ARGS[@]}" -t "${IMAGES[i]}" "${DIRS[i]}" --load --progress=plain
-
-  # Tag the base image locally for convenience
+  # Tag the base image locally for convenience and inheritance
   if [[ "${IMAGES[i]}" == *"arc-custom-runner"* ]]; then
     echo "🏷️  Tagging ${IMAGES[i]} as arc-base:local..."
     docker tag "${IMAGES[i]}" arc-base:local
   fi
+
   if [[ "$PUSH_IMAGES" == "true" ]]; then
     echo "🚀 Pushing image: ${IMAGES[i]}..."
     docker push "${IMAGES[i]}"
