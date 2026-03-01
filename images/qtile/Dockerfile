@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# Build on our new, optimized base image
-FROM arc-base:local
+ARG BASE_IMAGE=ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04
+FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.description="https://github.com/qtile/qtile custom runner image"
 LABEL org.opencontainers.image.source="https://github.com/ervinpopescu/arc/tree/main/images/qtile"
