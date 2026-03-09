@@ -56,7 +56,7 @@ helm_install() {
       if helm diff upgrade "$name" "$chart" \
         --namespace "$ns" \
         ${values:+--values "$values"} \
-        "$extra_args" \
+        $extra_args \
         --detailed-exitcode >/dev/null 2>&1; then
         echo "  ✅ No changes detected. Skipping upgrade."
         echo
@@ -81,7 +81,7 @@ helm_install() {
     "$chart" \
     --wait \
     --timeout 15m0s \
-    "$extra_args"
+    $extra_args
   echo
 }
 
