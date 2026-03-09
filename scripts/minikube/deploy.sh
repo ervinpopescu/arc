@@ -55,7 +55,7 @@ helm_install() {
       if helm diff upgrade "$name" "$chart" \
         --namespace "$ns" \
         ${values:+--values "$values"} \
-        "$extra_args" \
+        $extra_args \
         --detailed-exitcode >/dev/null 2>&1; then
         echo "  ✅ No changes detected. Skipping upgrade."
         echo
@@ -79,7 +79,7 @@ helm_install() {
     "$chart" \
     --wait \
     --timeout 15m0s \
-    "$extra_args"
+    $extra_args
   echo
 }
 
@@ -121,6 +121,36 @@ OVERRIDES_PATH=$(prompt "Overrides path" "$DEFAULT_OVERRIDES_PATH" "OVERRIDES_PA
 helm_install "$RUNNER_INSTALLATION_NAME" "$RUNNER_NAMESPACE" \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   "$OVERRIDES_PATH"
+
+# --- Dynamic VPA Deployment (Shadow Deployment Workaround) ---
+echo "🚀 Deploying VPA Shadow Deployment for $RUNNER_INSTALLATION_NAME..."
+
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${RUNNER_INSTALLATION_NAME}-vpa-shadow
+  namespace: ${RUNNER_NAMESPACE}
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      actions.github.com/scale-set-name: ${RUNNER_INSTALLATION_NAME}
+      app.kubernetes.io/component: runner
+  template:
+    metadata:
+      labels:
+        actions.github.com/scale-set-name: ${RUNNER_INSTALLATION_NAME}
+        app.kubernetes.io/component: runner
+    spec:
+      containers:
+        - name: runner
+          image: busybox
+EOF
+
+echo "🚀 Deploying VPA targeting Shadow Deployment..."
+export RUNNER_INSTALLATION_NAME RUNNER_NAMESPACE
+envsubst < "./runners/base/manifests/vpa-runners.yaml" | kubectl apply -f -
 
 # kubectl apply -f "$TOOLCACHE_PVC_YAML"
 

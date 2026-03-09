@@ -1,13 +1,14 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: qtile-runners-vpa
-  namespace: qtile-runners
+  name: ${RUNNER_INSTALLATION_NAME}-runners-vpa
+  namespace: ${RUNNER_NAMESPACE}
 spec:
+  # Target the Shadow Deployment which has the same selector as the runners
   targetRef:
-    apiVersion: "actions.github.com/v1alpha1"
-    kind: AutoscalingRunnerSet
-    name: "qtile"
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: ${RUNNER_INSTALLATION_NAME}-vpa-shadow
   resourcePolicy:
     containerPolicies:
       - containerName: 'runner'

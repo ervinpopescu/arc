@@ -29,11 +29,11 @@ template:
         command: ["/home/runner/run.sh"]
         resources:
           requests:
-            cpu: "1"
-            memory: "2Gi"
+            cpu: "500m"
+            memory: "1Gi"
           limits:
             cpu: "2"
-            memory: "4Gi"
+            memory: "5.5Gi"
         env:
           - name: ACTIONS_RUNNER_CONTAINER_HOOKS
             value: /home/runner/k8s/index.js

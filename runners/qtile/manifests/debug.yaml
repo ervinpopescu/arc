@@ -6,13 +6,13 @@ metadata:
 spec:
   securityContext:
     fsGroup: 123
-  initContainers:
-  - name: fix-permissions
-    image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
-    command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
-    volumeMounts:
-    - name: debug-volume
-      mountPath: /opt/hostedtoolcache
+  # initContainers:
+  # - name: fix-permissions
+  #   image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+  #   command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
+  #   volumeMounts:
+  #   - name: debug-volume
+  #     mountPath: /opt/hostedtoolcache
   containers:
   - name: qtile-debug-runner
     image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"

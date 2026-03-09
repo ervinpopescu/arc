@@ -34,6 +34,7 @@ test_qtile_specifics() {
     # Check for extra tools if any (gcc, g++, etc)
     docker run --rm "$QTILE_IMAGE" gcc --version >/dev/null
     docker run --rm "$QTILE_IMAGE" g++ --version >/dev/null
+    docker run --rm "$QTILE_IMAGE" gpg --version >/dev/null
 
     echo "✅ Qtile image passed specific checks."
 }

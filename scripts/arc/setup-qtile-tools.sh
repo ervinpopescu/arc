@@ -45,6 +45,16 @@ else
     echo "✅ Rust nightly installation complete."
 fi
 
+# 4.2 Install cargo-tarpaulin if not present
+echo "📊 Checking for cargo-tarpaulin installation..."
+if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/cargo-tarpaulin" >/dev/null 2>&1; then
+    echo "✅ cargo-tarpaulin is already installed."
+else
+    echo "🚀 Installing cargo-tarpaulin..."
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "export RUSTUP_HOME=/opt/hostedtoolcache/rustup && export CARGO_HOME=/opt/hostedtoolcache/cargo && /opt/hostedtoolcache/cargo/bin/cargo install cargo-tarpaulin"
+    echo "✅ cargo-tarpaulin installation complete."
+fi
+
 # 5. Install uv if not present
 echo "❄️  Checking for uv installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/uv/bin/uv" >/dev/null 2>&1; then
