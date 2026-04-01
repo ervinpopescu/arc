@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Delete old versions
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_PACKAGES }}
         run: |
           # Get all versions of the package
           versions=$(gh api /user/packages/container/${{ matrix.package_name }}/versions --paginate --jq '.[] | {id: .id, created_at: .created_at, tags: .metadata.container.tags}')
