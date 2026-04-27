@@ -22,9 +22,14 @@ template:
   spec:
     securityContext:
       fsGroup: 123
+    dnsPolicy: "ClusterFirst"
+    dnsConfig:
+      options:
+        - name: ndots
+          value: "2"
     containers:
       - name: runner
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         image: ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04
         command: ["/home/runner/run.sh"]
         resources:
@@ -43,6 +48,8 @@ template:
                 fieldPath: metadata.name
           - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
             value: "false"
+          - name: UV_CACHE_DIR
+            value: /opt/hostedtoolcache/.uv-cache
         volumeMounts:
           - name: work
             mountPath: /home/runner/_work

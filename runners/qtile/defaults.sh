@@ -6,3 +6,5 @@ export DEFAULT_RUNNERS_NAMESPACE="qtile-runners"
 export DEFAULT_SECRET_NAME="pre-defined-secret"
 export DEFAULT_OVERRIDES_PATH="./runners/qtile/values.runner-set.yaml"
 export TOOLCACHE_PVC_YAML=./runners/qtile/manifests/tool-cache-pvc.yaml
+export DEFAULT_MINIKUBE_PROFILE="prod-docker"
+# export MIN_NODES=2  # requires a CNI (flannel/calico) for cross-node networking
