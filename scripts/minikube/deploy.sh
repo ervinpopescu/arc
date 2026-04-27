@@ -2,9 +2,17 @@
 set -eo pipefail
 
 if [[ "$1" == "" ]]; then
-  echo "Usage: $(basename "$0") <path to defaults.sh>"
+  echo "Usage: sudo $(basename "$0") <path to defaults.sh>"
   exit 1
 fi
+
+if [[ "$EUID" -ne 0 ]]; then
+  echo "Error: this script must be run as root (use sudo)"
+  exit 1
+fi
+
+# Ensure kubectl uses root's kubeconfig
+export KUBECONFIG=/root/.kube/config
 # shellcheck source=/dev/null
 source "$1"
 
@@ -13,6 +21,88 @@ if [[ -f ".env" ]]; then
   echo "🔌 Loading environment variables from .env..."
   # shellcheck disable=SC2046
   export $(grep -v '^#' .env | xargs)
+fi
+
+# --- Unbound DNS setup ---
+setup_unbound() {
+  local conf_src
+  conf_src="$(dirname "$0")/configs/unbound.conf"
+  local conf_dst="/etc/unbound/unbound.conf.d/minikube.conf"
+
+  echo "Setting up unbound DNS..."
+
+  if ! command -v unbound &>/dev/null; then
+    echo "  📥 Installing unbound..."
+    pacman -S --noconfirm unbound
+  fi
+
+  if [[ ! -f "$conf_src" ]]; then
+    echo "  ❌ Unbound config not found at $conf_src"
+    return 1
+  fi
+
+  mkdir -p /etc/unbound/unbound.conf.d
+
+  if diff -q "$conf_src" "$conf_dst" &>/dev/null; then
+    if systemctl is-active --quiet unbound; then
+      echo "  ✅ Unbound already configured and running. Skipping."
+      echo
+      return
+    fi
+  fi
+
+  echo "  🟡 Writing unbound config..."
+  cp "$conf_src" "$conf_dst"
+
+  # Ensure the main unbound.conf includes the conf.d directory
+  if ! grep -q "include-toplevel.*unbound.conf.d" /etc/unbound/unbound.conf; then
+    echo 'include-toplevel: "/etc/unbound/unbound.conf.d/*.conf"' >> /etc/unbound/unbound.conf
+  fi
+
+  systemctl enable --now unbound
+  systemctl restart unbound
+
+  # Verify it's listening on the minikube bridge
+  sleep 1
+  if ss -ulnp | grep -q "192.168.49.1:53"; then
+    echo "  ✅ Unbound listening on 192.168.49.1:53"
+  else
+    echo "  ⚠️  Unbound may not be listening on 192.168.49.1:53 — check: systemctl status unbound"
+  fi
+  echo
+}
+
+# --- Multi-node setup ---
+ensure_nodes() {
+  local desired="${MIN_NODES:-1}"
+  local profile="${DEFAULT_MINIKUBE_PROFILE:-prod-docker}"
+
+  if [[ "$desired" -le 1 ]]; then
+    return
+  fi
+
+  echo "Ensuring minikube has $desired node(s) (profile: $profile)..."
+  local current
+  current=$(minikube node list -p "$profile" 2>/dev/null | grep -c "." || true)
+
+  while [[ "$current" -lt "$desired" ]]; do
+    echo "  ➕ Adding node $((current + 1))..."
+    minikube node add -p "$profile"
+    ((current++))
+  done
+
+  echo "  ✅ Node count: $current"
+  echo
+}
+
+setup_unbound
+ensure_nodes
+
+# --- Helm registry auth ---
+if [[ -n "$GITHUB_TOKEN" ]]; then
+  echo "Logging into ghcr.io for Helm..."
+  echo "$GITHUB_TOKEN" | helm registry login ghcr.io --username "$(git config user.name 2>/dev/null || echo x-token)" --password-stdin 2>&1
+  echo
 fi
 
 # Ensure helm-diff plugin is installed
@@ -84,6 +174,55 @@ helm_install() {
     $extra_args
   echo
 }
+
+# --- CoreDNS configuration ---
+configure_coredns() {
+  echo "Configuring CoreDNS..."
+
+  local desired_forward='forward . 192.168.49.1 {\n            max_concurrent 100\n        }'
+  local desired_cache='cache 3600 {\n           disable success cluster.local\n           disable denial cluster.local\n           prefetch 10\n        }'
+
+  local current
+  current=$(kubectl get configmap coredns -n kube-system -o jsonpath='{.data.Corefile}')
+
+  local needs_update=false
+  echo "$current" | grep -q "max_concurrent 100" || needs_update=true
+  echo "$current" | grep -q "prefetch 10" || needs_update=true
+
+  if [[ "$needs_update" == "false" ]]; then
+    echo "  ✅ CoreDNS already configured. Skipping."
+    echo
+    return
+  fi
+
+  echo "  🟡 Applying CoreDNS changes..."
+  kubectl get configmap coredns -n kube-system -o json \
+    | python3 -c "
+import json, sys, re
+cm = json.load(sys.stdin)
+cf = cm['data']['Corefile']
+# Replace forward block
+cf = re.sub(
+  r'forward\s+\.\s+[^\n]+(?:\s*\{[^}]*\})?',
+  'forward . 192.168.49.1 {\n            max_concurrent 100\n        }',
+  cf
+)
+# Replace cache block
+cf = re.sub(
+  r'cache\s+\d+\s*\{[^}]*\}',
+  'cache 3600 {\n           disable success cluster.local\n           disable denial cluster.local\n           prefetch 10\n        }',
+  cf
+)
+cm['data']['Corefile'] = cf
+print(json.dumps(cm))
+" | kubectl apply -f -
+
+  kubectl rollout restart deployment/coredns -n kube-system
+  kubectl rollout status deployment/coredns -n kube-system --timeout=60s
+  echo
+}
+
+configure_coredns
 
 # --- Controller chart ---
 INSTALLATION_NAME=$(prompt "Helm release name for controller chart" "$DEFAULT_ARC_INSTALLATION_NAME" "INSTALLATION_NAME")
