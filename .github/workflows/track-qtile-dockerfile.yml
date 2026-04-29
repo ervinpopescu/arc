@@ -1,0 +1,90 @@
+name: Track upstream qtile Dockerfile
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"  # Every Monday 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-upstream:
+    name: Check for upstream Dockerfile changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract pinned SHA from build script
+        id: pinned
+        run: |
+          SHA=$(grep 'QTILE_DOCKERFILE_SHA=' scripts/images/build_n_push.sh | head -1 | cut -d'"' -f2)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Pinned SHA: $SHA"
+
+      - name: Fetch latest commit SHA touching Dockerfile on master
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA=$(gh api "repos/qtile/qtile/commits?path=Dockerfile&sha=master&per_page=1" --jq '.[0].sha // ""')
+          if [ -z "$SHA" ]; then
+            echo "::error::Could not fetch upstream Dockerfile SHA — API returned empty response"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Upstream SHA: $SHA"
+
+      - name: Open bump PR if SHA changed
+        if: steps.upstream.outputs.sha != '' && steps.upstream.outputs.sha != steps.pinned.outputs.sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_SHA: ${{ steps.upstream.outputs.sha }}
+          OLD_SHA: ${{ steps.pinned.outputs.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="bump/qtile-dockerfile-${NEW_SHA:0:8}"
+
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH already exists. Nothing to do."
+            exit 0
+          fi
+
+          git checkout -b "$BRANCH"
+          sed -i "s|QTILE_DOCKERFILE_SHA=\".*\"|QTILE_DOCKERFILE_SHA=\"$NEW_SHA\"|" \
+            scripts/images/build_n_push.sh
+          git add scripts/images/build_n_push.sh
+          git commit -m "chore: bump qtile Dockerfile SHA to ${NEW_SHA:0:8}
+
+          Old: $OLD_SHA
+          New: $NEW_SHA
+          Source: https://github.com/qtile/qtile/commit/$NEW_SHA"
+
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "chore: bump qtile Dockerfile SHA to ${NEW_SHA:0:8}" \
+            --body "## Upstream qtile Dockerfile changed
+
+          The \`Dockerfile\` in [qtile/qtile](https://github.com/qtile/qtile) was updated.
+
+          | | SHA |
+          |---|---|
+          | **Previous** | \`$OLD_SHA\` |
+          | **New** | \`$NEW_SHA\` |
+
+          **Review the diff:** https://github.com/qtile/qtile/compare/${OLD_SHA}...${NEW_SHA}
+
+          After merging this PR, rebuild and push the runner image:
+          \`\`\`bash
+          bash scripts/images/build_n_push.sh --push
+          \`\`\`" \
+            --base main \
+            --head "$BRANCH"
+
+      - name: Report no change
+        if: steps.upstream.outputs.sha == steps.pinned.outputs.sha && steps.upstream.outputs.sha != ''
+        run: echo "Pinned SHA matches upstream. No update needed."

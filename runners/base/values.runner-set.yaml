@@ -49,7 +49,7 @@ template:
           - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
             value: "false"
           - name: UV_CACHE_DIR
-            value: /opt/hostedtoolcache/.uv-cache
+            value: /opt/hostedtoolcache/uv-cache
         volumeMounts:
           - name: work
             mountPath: /home/runner/_work
