@@ -34,8 +34,8 @@ template:
         command: ["/home/runner/run.sh"]
         resources:
           requests:
-            cpu: "500m"
-            memory: "1Gi"
+            cpu: "350m"
+            memory: "640Mi"
           limits:
             cpu: "2"
             memory: "5.5Gi"
