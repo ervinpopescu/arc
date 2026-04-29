@@ -18,7 +18,7 @@ source "$1"
 
 # Load local .env if it exists in the project root
 if [[ -f ".env" ]]; then
-  echo "🔌 Loading environment variables from .env..."
+  echo " Loading environment variables from .env..."
   # shellcheck disable=SC2046
   export $(grep -v '^#' .env | xargs)
 fi
@@ -32,12 +32,12 @@ setup_unbound() {
   echo "Setting up unbound DNS..."
 
   if ! command -v unbound &>/dev/null; then
-    echo "  📥 Installing unbound..."
+    echo "   Installing unbound..."
     pacman -S --noconfirm unbound
   fi
 
   if [[ ! -f "$conf_src" ]]; then
-    echo "  ❌ Unbound config not found at $conf_src"
+    echo "   Unbound config not found at $conf_src"
     return 1
   fi
 
@@ -45,13 +45,13 @@ setup_unbound() {
 
   if diff -q "$conf_src" "$conf_dst" &>/dev/null; then
     if systemctl is-active --quiet unbound; then
-      echo "  ✅ Unbound already configured and running. Skipping."
+      echo "   Unbound already configured and running. Skipping."
       echo
       return
     fi
   fi
 
-  echo "  🟡 Writing unbound config..."
+  echo "   Writing unbound config..."
   cp "$conf_src" "$conf_dst"
 
   # Ensure the main unbound.conf includes the conf.d directory
@@ -65,9 +65,9 @@ setup_unbound() {
   # Verify it's listening on the minikube bridge
   sleep 1
   if ss -ulnp | grep -q "192.168.49.1:53"; then
-    echo "  ✅ Unbound listening on 192.168.49.1:53"
+    echo "   Unbound listening on 192.168.49.1:53"
   else
-    echo "  ⚠️  Unbound may not be listening on 192.168.49.1:53 — check: systemctl status unbound"
+    echo "    Unbound may not be listening on 192.168.49.1:53 — check: systemctl status unbound"
   fi
   echo
 }
@@ -86,12 +86,12 @@ ensure_nodes() {
   current=$(minikube node list -p "$profile" 2>/dev/null | grep -c "." || true)
 
   while [[ "$current" -lt "$desired" ]]; do
-    echo "  ➕ Adding node $((current + 1))..."
+    echo "   Adding node $((current + 1))..."
     minikube node add -p "$profile"
     ((current++))
   done
 
-  echo "  ✅ Node count: $current"
+  echo "   Node count: $current"
   echo
 }
 
@@ -107,7 +107,7 @@ fi
 
 # Ensure helm-diff plugin is installed
 if ! helm plugin list | grep -q "diff"; then
-  echo "📥 Installing helm-diff plugin..."
+  echo " Installing helm-diff plugin..."
   helm plugin install https://github.com/databus23/helm-diff --verify=false
 fi
 
@@ -148,14 +148,14 @@ helm_install() {
         ${values:+--values "$values"} \
         $extra_args \
         --detailed-exitcode >/dev/null 2>&1; then
-        echo "  ✅ No changes detected. Skipping upgrade."
+        echo "   No changes detected. Skipping upgrade."
         echo
         return
       fi
-      echo "  🟡 Changes detected. Upgrading..."
+      echo "   Changes detected. Upgrading..."
     fi
   else
-    echo "  🚀 Release does not exist. Installing..."
+    echo "   Release does not exist. Installing..."
   fi
 
   echo "  Chart: $chart"
@@ -190,12 +190,12 @@ configure_coredns() {
   echo "$current" | grep -q "prefetch 10" || needs_update=true
 
   if [[ "$needs_update" == "false" ]]; then
-    echo "  ✅ CoreDNS already configured. Skipping."
+    echo "   CoreDNS already configured. Skipping."
     echo
     return
   fi
 
-  echo "  🟡 Applying CoreDNS changes..."
+  echo "   Applying CoreDNS changes..."
   kubectl get configmap coredns -n kube-system -o json \
     | python3 -c "
 import json, sys, re
@@ -264,7 +264,7 @@ helm_install "$RUNNER_INSTALLATION_NAME" "$RUNNER_NAMESPACE" \
   "$OVERRIDES_PATH"
 
 # --- Dynamic VPA Deployment (Shadow Deployment Workaround) ---
-echo "🚀 Deploying VPA Shadow Deployment for $RUNNER_INSTALLATION_NAME..."
+echo " Deploying VPA Shadow Deployment for $RUNNER_INSTALLATION_NAME..."
 
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
@@ -289,7 +289,7 @@ spec:
           image: busybox
 EOF
 
-echo "🚀 Deploying VPA targeting Shadow Deployment..."
+echo " Deploying VPA targeting Shadow Deployment..."
 export RUNNER_INSTALLATION_NAME RUNNER_NAMESPACE
 envsubst < "./runners/base/manifests/vpa-runners.yaml" | kubectl apply -f -
 

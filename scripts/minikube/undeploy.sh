@@ -31,7 +31,7 @@ helm_uninstall() {
   echo "Uninstalling Helm release:"
   echo "  Release: $name"
   echo "  Namespace: $ns"
-  helm uninstall "$name" --namespace "$ns" || echo "ℹ️ Release $name not found in $ns"
+  helm uninstall "$name" --namespace "$ns" || echo " Release $name not found in $ns"
   echo
 }
 
@@ -57,9 +57,9 @@ delete_namespace() {
   if [[ "${confirm,,}" == "y" ]]; then
     echo "Deleting namespace $ns..."
     kubectl delete ns "$ns" --ignore-not-found --timeout 30s || ./scripts/minikube/cleanup-ns.sh "$ns"
-    echo "✅ Namespace $ns deleted"
+    echo " Namespace $ns deleted"
   else
-    echo "⏩ Namespace $ns preserved"
+    echo " Namespace $ns preserved"
   fi
   echo
 }
@@ -80,4 +80,4 @@ NAMESPACE=$(prompt "Systems namespace (controller ns)" "$DEFAULT_ARC_NAMESPACE" 
 helm_uninstall "$INSTALLATION_NAME" "$NAMESPACE"
 delete_namespace "$NAMESPACE"
 
-echo "🎉 Uninstall complete."
+echo " Uninstall complete."

@@ -7,7 +7,7 @@ QTILE_IMAGE="ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
 test_image() {
     local image=$1
     local name=$2
-    echo "🧪 Testing image: $name ($image)"
+    echo " Testing image: $name ($image)"
 
     # Check for basic binaries
     docker run --rm "$image" git --version >/dev/null
@@ -19,36 +19,36 @@ test_image() {
     local uid
     uid=$(docker run --rm "$image" id -u)
     if [ "$uid" != "1001" ]; then
-        echo "❌ User ID is not 1001 (found $uid)"
+        echo " User ID is not 1001 (found $uid)"
         exit 1
     fi
 
     # Check sudo access
     docker run --rm "$image" sudo whoami >/dev/null
 
-    echo "✅ Image $name passed basic checks."
+    echo " Image $name passed basic checks."
 }
 
 test_qtile_specifics() {
-    echo "🧪 Testing Qtile specific image features..."
+    echo " Testing Qtile specific image features..."
     docker run --rm "$QTILE_IMAGE" gcc --version >/dev/null
     docker run --rm "$QTILE_IMAGE" python3.12 --version >/dev/null
     docker run --rm "$QTILE_IMAGE" uv --version >/dev/null
     docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.19 >/dev/null
 
-    echo "✅ Qtile image passed specific checks."
+    echo " Qtile image passed specific checks."
 }
 
 # Run tests
 if docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
     test_image "$BASE_IMAGE" "Base Runner"
 else
-    echo "⚠️  Base image not found locally, skipping test. Run 'make build' first."
+    echo "  Base image not found locally, skipping test. Run 'make build' first."
 fi
 
 if docker image inspect "$QTILE_IMAGE" >/dev/null 2>&1; then
     test_image "$QTILE_IMAGE" "Qtile Runner"
     test_qtile_specifics
 else
-    echo "⚠️  Qtile image not found locally, skipping test. Run 'make build' first."
+    echo "  Qtile image not found locally, skipping test. Run 'make build' first."
 fi
