@@ -1,0 +1,52 @@
+name: Update Runner Dependencies
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Fetch latest versions
+        id: versions
+        run: |
+          RUNNER_LATEST=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/^v//')
+          HOOKS_LATEST=$(curl -sL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | sed 's/^v//')
+          
+          echo "runner_version=$RUNNER_LATEST" >> $GITHUB_OUTPUT
+          echo "hooks_version=$HOOKS_LATEST" >> $GITHUB_OUTPUT
+
+      - name: Update Dockerfiles
+        run: |
+          RUNNER_LATEST="${{ steps.versions.outputs.runner_version }}"
+          HOOKS_LATEST="${{ steps.versions.outputs.hooks_version }}"
+          
+          # Update RUNNER_VERSION
+          sed -i "s/ARG RUNNER_VERSION=\".*\"/ARG RUNNER_VERSION=\"$RUNNER_LATEST\"/g" images/base/Dockerfile
+          sed -i "s/ARG RUNNER_VERSION=\".*\"/ARG RUNNER_VERSION=\"$RUNNER_LATEST\"/g" images/qtile/Dockerfile
+          
+          # Update RUNNER_CONTAINER_HOOKS_VERSION
+          sed -i "s/ARG RUNNER_CONTAINER_HOOKS_VERSION=\".*\"/ARG RUNNER_CONTAINER_HOOKS_VERSION=\"$HOOKS_LATEST\"/g" images/base/Dockerfile
+          sed -i "s/ARG RUNNER_CONTAINER_HOOKS_VERSION=\".*\"/ARG RUNNER_CONTAINER_HOOKS_VERSION=\"$HOOKS_LATEST\"/g" images/qtile/Dockerfile
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(deps): update runner and container-hooks versions"
+          title: "chore(deps): update runner and container-hooks versions"
+          body: |
+            Updates:
+            - `actions/runner` to `${{ steps.versions.outputs.runner_version }}`
+            - `actions/runner-container-hooks` to `${{ steps.versions.outputs.hooks_version }}`
+          branch: "update-runner-deps"
+          base: "main"
+          labels: "dependencies"
+          delete-branch: true
