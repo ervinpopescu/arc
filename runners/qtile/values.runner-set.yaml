@@ -30,7 +30,7 @@ template:
     containers:
       - name: runner
         imagePullPolicy: IfNotPresent
-        image: ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04
+        image: ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44
         command: ["/home/runner/run.sh"]
         resources:
           requests:
@@ -49,7 +49,7 @@ template:
           - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
             value: "false"
           - name: UV_CACHE_DIR
-            value: /opt/hostedtoolcache/.uv-cache
+            value: /opt/hostedtoolcache/uv-cache
         volumeMounts:
           - name: work
             mountPath: /home/runner/_work

@@ -2,7 +2,7 @@
 set -eo pipefail
 
 BASE_IMAGE="ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04"
-QTILE_IMAGE="ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+QTILE_IMAGE="ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
 
 test_image() {
     local image=$1
@@ -31,10 +31,10 @@ test_image() {
 
 test_qtile_specifics() {
     echo "🧪 Testing Qtile specific image features..."
-    # Check for extra tools if any (gcc, g++, etc)
     docker run --rm "$QTILE_IMAGE" gcc --version >/dev/null
-    docker run --rm "$QTILE_IMAGE" g++ --version >/dev/null
-    docker run --rm "$QTILE_IMAGE" gpg --version >/dev/null
+    docker run --rm "$QTILE_IMAGE" python3.12 --version >/dev/null
+    docker run --rm "$QTILE_IMAGE" uv --version >/dev/null
+    docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.19 >/dev/null
 
     echo "✅ Qtile image passed specific checks."
 }

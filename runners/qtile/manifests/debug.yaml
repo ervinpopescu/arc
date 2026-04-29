@@ -8,14 +8,14 @@ spec:
     fsGroup: 123
   # initContainers:
   # - name: fix-permissions
-  #   image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+  #   image: "ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
   #   command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
   #   volumeMounts:
   #   - name: debug-volume
   #     mountPath: /opt/hostedtoolcache
   containers:
   - name: qtile-debug-runner
-    image: "ghcr.io/ervinpopescu/qtile-custom-runner:ubuntu-26.04"
+    image: "ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
     command: ["/bin/bash"]
     args: ["-c", "sleep infinity"]
     env:
@@ -24,9 +24,9 @@ spec:
       - name: CARGO_HOME
         value: "/opt/hostedtoolcache/cargo"
       - name: UV_CACHE_DIR
-        value: "/opt/hostedtoolcache/uv/cache"
+        value: "/opt/hostedtoolcache/uv-cache"
       - name: PATH
-        value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hostedtoolcache/cargo/bin:/opt/hostedtoolcache/uv/bin"
+        value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hostedtoolcache/cargo/bin"
     volumeMounts:
     - name: debug-volume
       mountPath: /opt/hostedtoolcache

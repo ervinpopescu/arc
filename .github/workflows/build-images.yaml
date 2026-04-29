@@ -51,8 +51,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # Use the docker driver so locally loaded images are accessible as FROM
+      # sources in subsequent build steps without a registry round-trip.
+      # This driver only supports inline cache export; cache-from points to the
+      # previously published image, cache-to: inline is used on push steps only.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          driver: docker
 
       - name: Log in to the Container registry
         uses: docker/login-action@v4
@@ -78,29 +84,56 @@ jobs:
           load: true
           tags: ${{ steps.meta-base.outputs.tags }}
           labels: ${{ steps.meta-base.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/arc-custom-runner:ubuntu-26.04
           provenance: false
 
-      # --- Qtile Image ---
-      - name: Extract metadata (Qtile)
+      # --- qtile CI Base Image (Fedora + Wayland stack from upstream Dockerfile) ---
+      - name: Extract metadata (qtile CI base)
+        id: meta-qtile-base
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-ci-base
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Fetch upstream qtile Dockerfile
+        run: |
+          SHA=$(grep 'QTILE_DOCKERFILE_SHA=' scripts/images/build_n_push.sh | head -1 | cut -d'"' -f2)
+          mkdir -p /tmp/qtile-ci-base
+          curl -fsSL "https://raw.githubusercontent.com/qtile/qtile/${SHA}/Dockerfile" \
+            -o /tmp/qtile-ci-base/Dockerfile
+
+      - name: Build and Load (qtile CI base)
+        uses: docker/build-push-action@v7
+        with:
+          context: /tmp/qtile-ci-base
+          load: true
+          tags: ${{ steps.meta-qtile-base.outputs.tags }}
+          labels: ${{ steps.meta-qtile-base.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-ci-base:latest
+          provenance: false
+
+      # --- qtile ARC Runner Image (runner machinery on top of qtile-ci-base) ---
+      - name: Extract metadata (Qtile runner)
         id: meta-qtile
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-custom-runner
           tags: |
-            type=raw,value=ubuntu-26.04
+            type=raw,value=fedora-44
             type=sha,format=short
 
-      - name: Build and Load (Qtile)
+      - name: Build and Load (Qtile runner)
         uses: docker/build-push-action@v7
         with:
           context: ./images/qtile
           load: true
           tags: ${{ steps.meta-qtile.outputs.tags }}
           labels: ${{ steps.meta-qtile.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          build-args: |
+            QTILE_CI_BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-ci-base:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-custom-runner:fedora-44
           provenance: false
 
       # --- Validation ---
@@ -116,11 +149,23 @@ jobs:
           push: true
           tags: ${{ steps.meta-base.outputs.tags }}
           labels: ${{ steps.meta-base.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/arc-custom-runner:ubuntu-26.04
+          cache-to: type=inline
           provenance: false
 
-      - name: Push Qtile image
+      - name: Push qtile CI base image
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v7
+        with:
+          context: /tmp/qtile-ci-base
+          push: true
+          tags: ${{ steps.meta-qtile-base.outputs.tags }}
+          labels: ${{ steps.meta-qtile-base.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-ci-base:latest
+          cache-to: type=inline
+          provenance: false
+
+      - name: Push Qtile runner image
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v7
         with:
@@ -128,6 +173,8 @@ jobs:
           push: true
           tags: ${{ steps.meta-qtile.outputs.tags }}
           labels: ${{ steps.meta-qtile.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          build-args: |
+            QTILE_CI_BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-ci-base:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/qtile-custom-runner:fedora-44
+          cache-to: type=inline
           provenance: false
