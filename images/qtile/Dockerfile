@@ -33,6 +33,7 @@ RUN dnf install -y \
     krb5-libs \
     zlib \
     libicu \
+    procps-ng \
     && dnf clean all
 
 # Setup runner user and group (Fedora uses wheel, not sudo)
