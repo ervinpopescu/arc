@@ -53,6 +53,10 @@ If a namespace gets stuck in a "Terminating" state:
 make cleanup-base
 ```
 
+## Related Repositories
+
+- **[archnet-cfg](https://github.com/ervinpopescu/archnet-cfg)**: The host machine configuration repository. It provides the base `minikube.service` and the `port-fwd-prometheus.service` that integrate with this Kubernetes setup.
+
 ## Monitoring
 The deployment includes the `kube-prometheus-stack`. You can access the Prometheus dashboard using the provided systemd service or by running:
 ```bash
