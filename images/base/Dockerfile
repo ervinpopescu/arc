@@ -3,7 +3,7 @@
 # --- Stage 1: Builder ---
 FROM mcr.microsoft.com/dotnet/runtime-deps:11.0-preview-resolute-amd64 AS builder
 
-ARG RUNNER_VERSION="2.331.0"
+ARG RUNNER_VERSION="2.334.0"
 ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION="0.8.1"
 
