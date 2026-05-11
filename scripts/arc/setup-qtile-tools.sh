@@ -50,6 +50,8 @@ echo " Checking for cargo-tarpaulin installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/cargo-tarpaulin" >/dev/null 2>&1; then
     echo " cargo-tarpaulin is already installed."
 else
+    echo " Installing cargo-tarpaulin build prerequisites (openssl-devel, pkgconf)..."
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "sudo dnf install -y openssl-devel pkgconf-pkg-config"
     echo " Installing cargo-tarpaulin..."
     kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "export RUSTUP_HOME=/opt/hostedtoolcache/rustup && export CARGO_HOME=/opt/hostedtoolcache/cargo && /opt/hostedtoolcache/cargo/bin/cargo install cargo-tarpaulin"
     echo " cargo-tarpaulin installation complete."
