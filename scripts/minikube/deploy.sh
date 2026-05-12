@@ -70,8 +70,6 @@ ensure_cluster() {
   local profile="${DEFAULT_MINIKUBE_PROFILE:-prod}"
   local driver="${MINIKUBE_DRIVER:-qemu2}"
   local cni="${MINIKUBE_CNI:-calico}"
-  local firmware="${MINIKUBE_FIRMWARE_PATH:-}"
-
   if minikube status -p "$profile" 2>/dev/null | grep -q "Running"; then
     echo "Cluster '$profile' already running. Skipping start."
     echo
@@ -80,13 +78,9 @@ ensure_cluster() {
 
   echo "Starting minikube cluster (profile: $profile, driver: $driver, cni: $cni)..."
 
-  local firmware_arg=""
-  if [[ -n "$firmware" ]]; then
-    firmware_arg="--qemu-firmware-path=$firmware"
-  fi
-
+  local extra_args="${MINIKUBE_EXTRA_ARGS:-}"
   # shellcheck disable=SC2086
-  minikube start -p "$profile" --driver="$driver" --cni="$cni" $firmware_arg
+  minikube start -p "$profile" --driver="$driver" --cni="$cni" $extra_args
   echo
 }
 
@@ -214,14 +208,20 @@ helm_install() {
 configure_coredns() {
   echo "Configuring CoreDNS..."
 
-  local desired_forward='forward . 192.168.49.1 {\n            max_concurrent 100\n        }'
-  local desired_cache='cache 3600 {\n           disable success cluster.local\n           disable denial cluster.local\n           prefetch 10\n        }'
+  # Derive the host gateway IP from the minikube profile's network
+  local profile="${DEFAULT_MINIKUBE_PROFILE:-prod}"
+  local gateway
+  gateway=$(minikube ssh -p "$profile" -- ip route show default 2>/dev/null | awk '/default/ {print $3; exit}')
+  if [[ -z "$gateway" ]]; then
+    echo "   Could not determine minikube gateway IP. Skipping CoreDNS config."
+    echo
+    return
+  fi
 
   local current
   current=$(kubectl get configmap coredns -n kube-system -o jsonpath='{.data.Corefile}')
 
   local needs_update=false
-  echo "$current" | grep -q "max_concurrent 100" || needs_update=true
   echo "$current" | grep -q "prefetch 10" || needs_update=true
 
   if [[ "$needs_update" == "false" ]]; then
@@ -230,27 +230,30 @@ configure_coredns() {
     return
   fi
 
-  echo "   Applying CoreDNS changes..."
+  echo "   Applying CoreDNS changes (gateway: $gateway)..."
   kubectl get configmap coredns -n kube-system -o json \
     | python3 -c "
 import json, sys, re
 cm = json.load(sys.stdin)
 cf = cm['data']['Corefile']
-# Replace forward block
+gateway = sys.argv[1]
+# Replace forward block (with or without existing options block)
 cf = re.sub(
-  r'forward\s+\.\s+[^\n]+(?:\s*\{[^}]*\})?',
-  'forward . 192.168.49.1 {\n            max_concurrent 100\n        }',
-  cf
+  r'forward\s+\.\s+\S+(\s*\{[^}]*\})?',
+  'forward . ' + gateway + ' {\n        max_concurrent 1000\n    }',
+  cf,
+  flags=re.DOTALL
 )
 # Replace cache block
 cf = re.sub(
-  r'cache\s+\d+\s*\{[^}]*\}',
-  'cache 3600 {\n           disable success cluster.local\n           disable denial cluster.local\n           prefetch 10\n        }',
-  cf
+  r'cache\s+\d+(\s*\{[^}]*\})?',
+  'cache 3600 {\n        disable success cluster.local\n        disable denial cluster.local\n        prefetch 10\n    }',
+  cf,
+  flags=re.DOTALL
 )
 cm['data']['Corefile'] = cf
 print(json.dumps(cm))
-" | kubectl apply -f -
+" "$gateway" | kubectl apply -f -
 
   kubectl rollout restart deployment/coredns -n kube-system
   kubectl rollout status deployment/coredns -n kube-system --timeout=60s
