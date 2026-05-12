@@ -6,3 +6,10 @@ export DEFAULT_RUNNERS_NAMESPACE="base-runners"
 export DEFAULT_SECRET_NAME="pre-defined-secret"
 export DEFAULT_OVERRIDES_PATH="./runners/base/values.runner-set.yaml"
 export TOOLCACHE_PVC_YAML=./runners/base/manifests/tool-cache-pvc.yaml
+export DEFAULT_MINIKUBE_PROFILE="prod"
+export MINIKUBE_DRIVER="qemu2"
+export MINIKUBE_FIRMWARE_PATH="/usr/share/edk2/x64/OVMF_CODE.4m.fd"
+# Uncomment and set MIN_NODES > 1 to provision a multi-node cluster.
+# MINIKUBE_CNI must also be set to a CNI that supports cross-node networking (calico, flannel, cilium).
+export MIN_NODES=2
+export MINIKUBE_CNI=calico

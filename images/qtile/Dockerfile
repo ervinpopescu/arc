@@ -55,6 +55,9 @@ RUN curl -fL -o runner.tar.gz \
     && rm hooks.zip \
     && chown -R runner:runner-group /home/runner
 
+RUN curl -fL "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz" \
+    | tar xzf - -C /usr/local/bin
+
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 

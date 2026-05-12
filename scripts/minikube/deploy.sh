@@ -2,17 +2,10 @@
 set -eo pipefail
 
 if [[ "$1" == "" ]]; then
-  echo "Usage: sudo $(basename "$0") <path to defaults.sh>"
+  echo "Usage: $(basename "$0") <path to defaults.sh>"
   exit 1
 fi
 
-if [[ "$EUID" -ne 0 ]]; then
-  echo "Error: this script must be run as root (use sudo)"
-  exit 1
-fi
-
-# Ensure kubectl uses root's kubeconfig
-export KUBECONFIG=/root/.kube/config
 # shellcheck source=/dev/null
 source "$1"
 
@@ -33,7 +26,7 @@ setup_unbound() {
 
   if ! command -v unbound &>/dev/null; then
     echo "   Installing unbound..."
-    pacman -S --noconfirm unbound
+    sudo pacman -S --noconfirm unbound
   fi
 
   if [[ ! -f "$conf_src" ]]; then
@@ -41,7 +34,7 @@ setup_unbound() {
     return 1
   fi
 
-  mkdir -p /etc/unbound/unbound.conf.d
+  sudo mkdir -p /etc/unbound/unbound.conf.d
 
   if diff -q "$conf_src" "$conf_dst" &>/dev/null; then
     if systemctl is-active --quiet unbound; then
@@ -52,15 +45,15 @@ setup_unbound() {
   fi
 
   echo "   Writing unbound config..."
-  cp "$conf_src" "$conf_dst"
+  sudo cp "$conf_src" "$conf_dst"
 
   # Ensure the main unbound.conf includes the conf.d directory
-  if ! grep -q "include-toplevel.*unbound.conf.d" /etc/unbound/unbound.conf; then
-    echo 'include-toplevel: "/etc/unbound/unbound.conf.d/*.conf"' >> /etc/unbound/unbound.conf
+  if ! sudo grep -q "include-toplevel.*unbound.conf.d" /etc/unbound/unbound.conf; then
+    echo 'include-toplevel: "/etc/unbound/unbound.conf.d/*.conf"' | sudo tee -a /etc/unbound/unbound.conf >/dev/null
   fi
 
-  systemctl enable --now unbound
-  systemctl restart unbound
+  sudo systemctl enable --now unbound
+  sudo systemctl restart unbound
 
   # Verify it's listening on the minikube bridge
   sleep 1
@@ -72,16 +65,57 @@ setup_unbound() {
   echo
 }
 
+# --- Cluster bootstrap ---
+ensure_cluster() {
+  local profile="${DEFAULT_MINIKUBE_PROFILE:-prod}"
+  local driver="${MINIKUBE_DRIVER:-qemu2}"
+  local cni="${MINIKUBE_CNI:-calico}"
+  local firmware="${MINIKUBE_FIRMWARE_PATH:-}"
+
+  if minikube status -p "$profile" 2>/dev/null | grep -q "Running"; then
+    echo "Cluster '$profile' already running. Skipping start."
+    echo
+    return
+  fi
+
+  echo "Starting minikube cluster (profile: $profile, driver: $driver, cni: $cni)..."
+
+  local firmware_arg=""
+  if [[ -n "$firmware" ]]; then
+    firmware_arg="--qemu-firmware-path=$firmware"
+  fi
+
+  # shellcheck disable=SC2086
+  minikube start -p "$profile" --driver="$driver" --cni="$cni" $firmware_arg
+  echo
+}
+
 # --- Multi-node setup ---
 ensure_nodes() {
   local desired="${MIN_NODES:-1}"
   local profile="${DEFAULT_MINIKUBE_PROFILE:-prod-docker}"
+  local cni="${MINIKUBE_CNI:-}"
 
   if [[ "$desired" -le 1 ]]; then
     return
   fi
 
-  echo "Ensuring minikube has $desired node(s) (profile: $profile)..."
+  if [[ -z "$cni" ]]; then
+    echo "ERROR: MIN_NODES=$desired requires MINIKUBE_CNI to be set (e.g. calico, flannel, cilium)."
+    echo "       Cross-node pod networking does not work with the default kindnet CNI."
+    exit 1
+  fi
+
+  echo "Ensuring minikube has $desired node(s) (profile: $profile, CNI: $cni)..."
+
+  # Verify the running cluster was started with a compatible CNI by checking for the CNI daemonset.
+  if ! kubectl get daemonset -n kube-system 2>/dev/null | grep -qi "$cni"; then
+    echo "WARNING: CNI daemonset for '$cni' not found in kube-system."
+    echo "         If this cluster was started without --cni=$cni, cross-node networking may fail."
+    echo "         To fix: minikube delete -p $profile && minikube start -p $profile --cni=$cni"
+    echo
+  fi
+
   local current
   current=$(minikube node list -p "$profile" 2>/dev/null | grep -c "." || true)
 
@@ -96,6 +130,7 @@ ensure_nodes() {
 }
 
 setup_unbound
+ensure_cluster
 ensure_nodes
 
 # --- Helm registry auth ---

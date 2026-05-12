@@ -37,8 +37,8 @@ push:
 	./scripts/images/build_n_push.sh --push
 
 deploy-monitoring:
-	sudo kubectl apply -f runners/base/manifests/prometheus-lite.yaml
-	sudo minikube addons enable metrics-server -p prod-docker
+	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
+	minikube addons enable metrics-server -p prod
 
 deploy-vpa:
 	kubectl apply -f runners/base/manifests/vpa-runners.yaml
@@ -46,7 +46,7 @@ deploy-vpa:
 deploy-infra: deploy-monitoring deploy-vpa
 
 get-vpa-recommendations:
-	sudo kubectl get vpa -A
+	kubectl get vpa -A
 
 cleanup-qtile-tools:
 	./scripts/arc/cleanup-qtile-tools.sh
