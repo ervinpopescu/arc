@@ -16,8 +16,9 @@ help:
 	@echo "  deploy-base               Deploy base runner scale set"
 	@echo "  deploy-qtile              Deploy qtile runner scale set"
 	@echo "  deploy-monitoring         Deploy lightweight Prometheus and VPA"
-	@echo "  deploy-vpa                Apply VPA runner policies"
-	@echo "  deploy-infra              Deploy both monitoring and VPA"
+	@echo "  deploy-vpa-crds           Install VPA CRDs"
+	@echo "  deploy-vpa                Apply VPA RBAC (runner policies applied by deploy scripts)"
+	@echo "  deploy-infra              Deploy monitoring, VPA CRDs, and VPA RBAC"
 	@echo "  get-vpa-recommendations   View current VPA resource suggestions"
 	@echo "  undeploy-base             Undeploy base runner scale set"
 	@echo "  undeploy-qtile            Undeploy qtile runner scale set"
@@ -40,10 +41,13 @@ deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
 	minikube addons enable metrics-server -p prod
 
-deploy-vpa:
-	kubectl apply -f runners/base/manifests/vpa-runners.yaml
+deploy-vpa-crds:
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml
 
-deploy-infra: deploy-monitoring deploy-vpa
+deploy-vpa:
+	kubectl apply -f runners/base/manifests/vpa-rbac.yaml
+
+deploy-infra: deploy-monitoring deploy-vpa-crds deploy-vpa
 
 get-vpa-recommendations:
 	kubectl get vpa -A
@@ -68,10 +72,10 @@ test-all: test-manifests test-images
 pre-commit:
 	pre-commit run --all-files
 
-deploy-base:
+deploy-base: deploy-infra
 	./scripts/minikube/deploy.sh runners/base/defaults.sh
 
-deploy-qtile:
+deploy-qtile: deploy-infra
 	./scripts/arc/setup-qtile-tools.sh
 	./scripts/minikube/deploy.sh runners/qtile/defaults.sh
 
