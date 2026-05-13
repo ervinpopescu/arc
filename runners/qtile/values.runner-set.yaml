@@ -24,6 +24,13 @@ template:
       node-role: worker
     securityContext:
       fsGroup: 123
+    initContainers:
+      - name: fix-work-permissions
+        image: ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44
+        command: ["sudo", "chown", "-R", "1001:123", "/home/runner/_work"]
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
     dnsPolicy: "ClusterFirst"
     dnsConfig:
       options:

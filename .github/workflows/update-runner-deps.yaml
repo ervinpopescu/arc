@@ -22,7 +22,7 @@ jobs:
         run: |
           RUNNER_LATEST=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/^v//')
           HOOKS_LATEST=$(curl -sL https://api.github.com/repos/actions/runner-container-hooks/releases/latest | jq -r .tag_name | sed 's/^v//')
-          
+
           echo "runner_version=$RUNNER_LATEST" >> $GITHUB_OUTPUT
           echo "hooks_version=$HOOKS_LATEST" >> $GITHUB_OUTPUT
 
@@ -30,11 +30,11 @@ jobs:
         run: |
           RUNNER_LATEST="${{ steps.versions.outputs.runner_version }}"
           HOOKS_LATEST="${{ steps.versions.outputs.hooks_version }}"
-          
+
           # Update RUNNER_VERSION
           sed -i "s/ARG RUNNER_VERSION=\".*\"/ARG RUNNER_VERSION=\"$RUNNER_LATEST\"/g" images/base/Dockerfile
           sed -i "s/ARG RUNNER_VERSION=\".*\"/ARG RUNNER_VERSION=\"$RUNNER_LATEST\"/g" images/qtile/Dockerfile
-          
+
           # Update RUNNER_CONTAINER_HOOKS_VERSION
           sed -i "s/ARG RUNNER_CONTAINER_HOOKS_VERSION=\".*\"/ARG RUNNER_CONTAINER_HOOKS_VERSION=\"$HOOKS_LATEST\"/g" images/base/Dockerfile
           sed -i "s/ARG RUNNER_CONTAINER_HOOKS_VERSION=\".*\"/ARG RUNNER_CONTAINER_HOOKS_VERSION=\"$HOOKS_LATEST\"/g" images/qtile/Dockerfile
