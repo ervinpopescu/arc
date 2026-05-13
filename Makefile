@@ -43,14 +43,20 @@ DEFAULTS ?= runners/qtile/defaults.sh
 ensure-cluster:
 	@bash -c 'source $(DEFAULTS) && \
 	  profile=$${DEFAULT_MINIKUBE_PROFILE:-prod} && \
-	  if minikube status -p "$$profile" 2>/dev/null | grep -q Running; then \
-	    echo "Cluster already running."; \
-	  else \
+	  if ! minikube status -p "$$profile" 2>/dev/null | grep -q Running; then \
+	    nodes_arg=""; \
+	    [[ "$${MIN_NODES:-1}" -gt 1 ]] && nodes_arg="--nodes=$${MIN_NODES}"; \
 	    minikube start -p "$$profile" \
 	      --driver="$${MINIKUBE_DRIVER:-kvm2}" \
 	      --cni="$${MINIKUBE_CNI:-calico}" \
+	      $$nodes_arg \
 	      $${MINIKUBE_EXTRA_ARGS:-}; \
-	  fi'
+	  fi && \
+	  echo "Labeling nodes..." && \
+	  kubectl label node "$$profile" node-role=system --overwrite && \
+	  for node in $$(kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name | grep -v "^$$profile$$"); do \
+	    kubectl label node "$$node" node-role=worker --overwrite; \
+	  done'
 
 deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
@@ -91,8 +97,8 @@ deploy-base: deploy-infra
 	./scripts/minikube/deploy.sh runners/base/defaults.sh
 
 deploy-qtile: deploy-infra
-	./scripts/arc/setup-qtile-tools.sh
 	./scripts/minikube/deploy.sh runners/qtile/defaults.sh
+	./scripts/arc/setup-qtile-tools.sh
 
 undeploy-base:
 	./scripts/minikube/undeploy.sh runners/base/defaults.sh
