@@ -4,15 +4,17 @@ metadata:
   name: debug
   namespace: qtile-runners
 spec:
+  nodeSelector:
+    node-role: worker
   securityContext:
     fsGroup: 123
-  # initContainers:
-  # - name: fix-permissions
-  #   image: "ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
-  #   command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
-  #   volumeMounts:
-  #   - name: debug-volume
-  #     mountPath: /opt/hostedtoolcache
+  initContainers:
+  - name: fix-permissions
+    image: "ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"
+    command: ["sudo", "chown", "-R", "1001:123", "/opt/hostedtoolcache"]
+    volumeMounts:
+    - name: debug-volume
+      mountPath: /opt/hostedtoolcache
   containers:
   - name: qtile-debug-runner
     image: "ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44"

@@ -4,6 +4,8 @@ metadata:
   name: debug
   namespace: arc-runners
 spec:
+  nodeSelector:
+    node-role: worker
   containers:
   - name: arc-debug-runner
     image: "ghcr.io/ervinpopescu/arc-custom-runner:ubuntu-26.04"

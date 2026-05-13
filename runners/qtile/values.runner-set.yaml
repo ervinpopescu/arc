@@ -20,6 +20,8 @@ minRunners: 0
 
 template:
   spec:
+    nodeSelector:
+      node-role: worker
     securityContext:
       fsGroup: 123
     dnsPolicy: "ClusterFirst"
@@ -48,6 +50,8 @@ template:
                 fieldPath: metadata.name
           - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
             value: "false"
+          - name: AGENT_TOOLSDIRECTORY
+            value: /opt/hostedtoolcache
           - name: UV_CACHE_DIR
             value: /opt/hostedtoolcache/uv-cache
         volumeMounts:

@@ -29,6 +29,10 @@ kubectl -n "$NAMESPACE" wait --for=condition=Ready pod/"$POD_NAME" --timeout=300
 echo " Checking for Rust installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/rustc" >/dev/null 2>&1; then
     echo " Rust is already installed."
+elif kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/rustup" >/dev/null 2>&1; then
+    echo " rustup present but stable missing — installing stable toolchain..."
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup toolchain install stable"
+    echo " Rust stable installation complete."
 else
     echo " Installing Rust via rustup..."
     kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path"
@@ -37,15 +41,25 @@ fi
 
 # 4.1 Install nightly toolchain
 echo " Checking for Rust nightly toolchain..."
-if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "export RUSTUP_HOME=/opt/hostedtoolcache/rustup && export CARGO_HOME=/opt/hostedtoolcache/cargo && /opt/hostedtoolcache/cargo/bin/rustup toolchain list | grep -q nightly" >/dev/null 2>&1; then
+if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup toolchain list | grep -q nightly" >/dev/null 2>&1; then
     echo " Rust nightly is already installed."
 else
     echo " Installing Rust nightly toolchain..."
-    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "export RUSTUP_HOME=/opt/hostedtoolcache/rustup && export CARGO_HOME=/opt/hostedtoolcache/cargo && /opt/hostedtoolcache/cargo/bin/rustup toolchain install nightly"
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup toolchain install nightly"
     echo " Rust nightly installation complete."
 fi
 
-# 4.2 Install cargo-tarpaulin if not present
+# 4.2 Install cargo-binstall if not present
+echo " Checking for cargo-binstall installation..."
+if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/cargo-binstall" >/dev/null 2>&1; then
+    echo " cargo-binstall is already installed."
+else
+    echo " Installing cargo-binstall..."
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/cargo install cargo-binstall"
+    echo " cargo-binstall installation complete."
+fi
+
+# 4.3 Install cargo-tarpaulin if not present
 echo " Checking for cargo-tarpaulin installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/cargo-tarpaulin" >/dev/null 2>&1; then
     echo " cargo-tarpaulin is already installed."
@@ -53,7 +67,7 @@ else
     echo " Installing cargo-tarpaulin build prerequisites (openssl-devel, pkgconf)..."
     kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "sudo dnf install -y openssl-devel pkgconf-pkg-config"
     echo " Installing cargo-tarpaulin..."
-    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "export RUSTUP_HOME=/opt/hostedtoolcache/rustup && export CARGO_HOME=/opt/hostedtoolcache/cargo && /opt/hostedtoolcache/cargo/bin/cargo install cargo-tarpaulin"
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/cargo install cargo-tarpaulin"
     echo " cargo-tarpaulin installation complete."
 fi
 

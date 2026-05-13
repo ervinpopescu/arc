@@ -267,7 +267,9 @@ INSTALLATION_NAME=$(prompt "Helm release name for controller chart" "$DEFAULT_AR
 NAMESPACE=$(prompt "Systems namespace (controller ns)" "$DEFAULT_ARC_NAMESPACE" "NAMESPACE")
 
 helm_install "$INSTALLATION_NAME" "$NAMESPACE" \
-  oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+  oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller \
+  "" \
+  "--set nodeSelector.node-role=system"
 
 # --- Runner chart ---
 RUNNER_INSTALLATION_NAME=$(prompt "Helm release name for runner chart" "$DEFAULT_RUNNERSET_INSTALLATION_NAME" "RUNNER_INSTALLATION_NAME")
@@ -322,6 +324,8 @@ spec:
         actions.github.com/scale-set-name: ${RUNNER_INSTALLATION_NAME}
         app.kubernetes.io/component: runner
     spec:
+      nodeSelector:
+        node-role: worker
       containers:
         - name: runner
           image: busybox

@@ -5,7 +5,7 @@ ifneq (,$(wildcard ./.env))
 	export
 endif
 
-.PHONY: help build push deploy-base deploy-qtile deploy-monitoring deploy-vpa deploy-infra get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all pre-commit
+.PHONY: help build push ensure-cluster deploy-base deploy-qtile deploy-monitoring deploy-vpa deploy-infra get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all pre-commit
 
 help:
 	@echo "Usage: make [target]"
@@ -13,6 +13,7 @@ help:
 	@echo "Targets:"
 	@echo "  build                     Build custom runner images"
 	@echo "  push                      Push custom runner images to GHCR"
+	@echo "  ensure-cluster            Start minikube cluster if not running (uses DEFAULTS=<path>)"
 	@echo "  deploy-base               Deploy base runner scale set"
 	@echo "  deploy-qtile              Deploy qtile runner scale set"
 	@echo "  deploy-monitoring         Deploy lightweight Prometheus and VPA"
@@ -37,6 +38,20 @@ build:
 push:
 	./scripts/images/build_n_push.sh --push
 
+DEFAULTS ?= runners/qtile/defaults.sh
+
+ensure-cluster:
+	@bash -c 'source $(DEFAULTS) && \
+	  profile=$${DEFAULT_MINIKUBE_PROFILE:-prod} && \
+	  if minikube status -p "$$profile" 2>/dev/null | grep -q Running; then \
+	    echo "Cluster already running."; \
+	  else \
+	    minikube start -p "$$profile" \
+	      --driver="$${MINIKUBE_DRIVER:-kvm2}" \
+	      --cni="$${MINIKUBE_CNI:-calico}" \
+	      $${MINIKUBE_EXTRA_ARGS:-}; \
+	  fi'
+
 deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
 	minikube addons enable metrics-server -p prod
@@ -47,7 +62,7 @@ deploy-vpa-crds:
 deploy-vpa:
 	kubectl apply -f runners/base/manifests/vpa-rbac.yaml
 
-deploy-infra: deploy-monitoring deploy-vpa-crds deploy-vpa
+deploy-infra: ensure-cluster deploy-monitoring deploy-vpa-crds deploy-vpa
 
 get-vpa-recommendations:
 	kubectl get vpa -A
