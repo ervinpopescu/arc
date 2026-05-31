@@ -20,7 +20,7 @@ Each runner set lives under `runners/{name}/` with:
 
 ### Tool Cache Persistence
 
-A 25Gi ReadWriteMany PVC (`tool-cache-runnerset`) is mounted at `/opt/hostedtoolcache` across runner pods. Tools (Rust, uv) are pre-installed via a debug pod (`scripts/arc/setup-qtile-tools.sh`). The runner user is UID 1001, GID 123 — manifests use `fsGroup: 123` to maintain volume permissions.
+A 50Gi ReadWriteMany PVC (`tool-cache-runnerset`) is mounted at `/opt/hostedtoolcache` across runner pods. Tools (Rust, uv) are pre-installed via a debug pod (`scripts/arc/setup-qtile-tools.sh`). The runner user is UID 1001, GID 123 — manifests use `fsGroup: 123` to maintain volume permissions.
 
 ### VPA Shadow Deployment
 
