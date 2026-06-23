@@ -38,7 +38,7 @@ template:
           value: "2"
     containers:
       - name: runner
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         image: ghcr.io/ervinpopescu/qtile-custom-runner:fedora-44
         command: ["/home/runner/run.sh"]
         resources:
