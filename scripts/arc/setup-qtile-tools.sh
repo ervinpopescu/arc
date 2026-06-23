@@ -71,6 +71,40 @@ else
     echo " cargo-tarpaulin installation complete."
 fi
 
+# 4.4 Install sccache and cargo-llvm-cov from GitHub release tarballs.
+# Pre-warm these into the PVC so the qtile-cmd-client CI prepare job's
+# `cargo binstall -y sccache cargo-llvm-cov` is a no-op fast path.
+# We download release tarballs directly because cargo-binstall has been
+# observed to log "INFO Done in <Ns>" without actually writing the binaries
+# to disk -- the CI then dies later with "sccache: command not found".
+# Extracting to a tmpdir and copying the binary fails loudly on any breakage.
+install_release_bin() {
+    local bin=$1 url=$2
+    echo " Checking for $bin installation..."
+    if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "test -x /opt/hostedtoolcache/cargo/bin/$bin" >/dev/null 2>&1; then
+        echo " $bin is already installed."
+        return
+    fi
+    echo " Installing $bin from $url..."
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "
+        set -euo pipefail
+        tmp=\$(mktemp -d)
+        trap 'rm -rf \"\$tmp\"' EXIT
+        curl -fLsS '$url' | tar xz -C \"\$tmp\"
+        src=\$(find \"\$tmp\" -type f -name '$bin' -executable -print -quit)
+        [ -n \"\$src\" ] || { echo 'binary $bin not found in release tarball' >&2; exit 1; }
+        install -m 0755 \"\$src\" /opt/hostedtoolcache/cargo/bin/$bin
+    "
+    echo " $bin installation complete."
+}
+
+SCCACHE_VERSION="${SCCACHE_VERSION:-v0.16.0}"
+CARGO_LLVM_COV_VERSION="${CARGO_LLVM_COV_VERSION:-v0.6.18}"
+install_release_bin sccache \
+    "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+install_release_bin cargo-llvm-cov \
+    "https://github.com/taiki-e/cargo-llvm-cov/releases/download/${CARGO_LLVM_COV_VERSION}/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz"
+
 # 5. Install uv if not present
 echo "  Checking for uv installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/uv/bin/uv" >/dev/null 2>&1; then
