@@ -55,7 +55,15 @@ if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/
     echo " cargo-binstall is already installed."
 else
     echo " Installing cargo-binstall..."
-    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/cargo install cargo-binstall"
+    BINSTALL_VERSION="${BINSTALL_VERSION:-1.20.1}"
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "
+      set -euo pipefail
+      tmpdir=\$(mktemp -d)
+      trap 'rm -rf \"\$tmpdir\"' EXIT
+      curl -fL -o \"\$tmpdir/cargo-binstall.tgz\" 'https://github.com/cargo-bins/cargo-binstall/releases/download/v$BINSTALL_VERSION/cargo-binstall-x86_64-unknown-linux-gnu.tgz'
+      tar xzf \"\$tmpdir/cargo-binstall.tgz\" -C \"\$tmpdir\"
+      install -m 755 \"\$tmpdir/cargo-binstall\" /opt/hostedtoolcache/cargo/bin/
+    "
     echo " cargo-binstall installation complete."
 fi
 
@@ -64,10 +72,16 @@ echo " Checking for cargo-tarpaulin installation..."
 if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "ls /opt/hostedtoolcache/cargo/bin/cargo-tarpaulin" >/dev/null 2>&1; then
     echo " cargo-tarpaulin is already installed."
 else
-    echo " Installing cargo-tarpaulin build prerequisites (openssl-devel, pkgconf)..."
-    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "sudo dnf install -y openssl-devel pkgconf-pkg-config"
     echo " Installing cargo-tarpaulin..."
-    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/cargo install cargo-tarpaulin"
+    TARPAULIN_VERSION="${TARPAULIN_VERSION:-0.35.5}"
+    kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "
+      set -euo pipefail
+      tmpdir=\$(mktemp -d)
+      trap 'rm -rf \"\$tmpdir\"' EXIT
+      curl -fL -o \"\$tmpdir/cargo-tarpaulin.tar.gz\" 'https://github.com/xd009642/tarpaulin/releases/download/$TARPAULIN_VERSION/cargo-tarpaulin-x86_64-unknown-linux-gnu.tar.gz'
+      tar xzf \"\$tmpdir/cargo-tarpaulin.tar.gz\" -C \"\$tmpdir\"
+      install -m 755 \"\$tmpdir/cargo-tarpaulin\" /opt/hostedtoolcache/cargo/bin/
+    "
     echo " cargo-tarpaulin installation complete."
 fi
 
