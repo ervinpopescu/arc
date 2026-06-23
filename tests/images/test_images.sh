@@ -35,6 +35,8 @@ test_qtile_specifics() {
     docker run --rm "$QTILE_IMAGE" python3.12 --version >/dev/null
     docker run --rm "$QTILE_IMAGE" uv --version >/dev/null
     docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.20 >/dev/null
+    docker run --rm "$QTILE_IMAGE" bash -c \
+        'f="$(pkg-config --variable=includedir wlroots-0.20)/wlr/config.h" && [ -f "$f" ] && grep -q WLR_HAS_XWAYLAND "$f"'
 
     echo " Qtile image passed specific checks."
 }

@@ -58,6 +58,16 @@ RUN curl -fL -o runner.tar.gz \
 RUN curl -fL "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz" \
     | tar xzf - -C /usr/local/bin
 
+# wlroots-devel on Fedora 44 does not ship the generated wlr/config.h; create it
+# so that libqtile's CFFI build.py can detect XWayland support at build time.
+# Fedora's wlroots package is compiled with XWayland support enabled.
+RUN WLROOTS_INC=$(pkg-config --variable=includedir wlroots-0.20 2>/dev/null) \
+    && if [ -n "$WLROOTS_INC" ] && [ ! -f "$WLROOTS_INC/wlr/config.h" ]; then \
+         mkdir -p "$WLROOTS_INC/wlr"; \
+         printf '#ifndef WLR_CONFIG_H\n#define WLR_CONFIG_H\n#define WLR_HAS_XWAYLAND 1\n#endif\n' \
+             > "$WLROOTS_INC/wlr/config.h"; \
+       fi
+
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 
