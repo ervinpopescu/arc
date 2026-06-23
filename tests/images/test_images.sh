@@ -35,8 +35,12 @@ test_qtile_specifics() {
     docker run --rm "$QTILE_IMAGE" python3.12 --version >/dev/null
     docker run --rm "$QTILE_IMAGE" uv --version >/dev/null
     docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.20 >/dev/null
+    # libqtile's CFFI build.py reads $QTILE_WLROOTS_PATH/wlr/config.h
+    # (default /usr/include/wlroots-0.20) to detect XWayland support;
+    # verify the wlroots-devel package ships that header.
     docker run --rm "$QTILE_IMAGE" bash -c \
-        'f="$(pkg-config --variable=includedir wlroots-0.20)/wlr/config.h" && [ -f "$f" ] && grep -q WLR_HAS_XWAYLAND "$f"'
+        'inc=$(pkg-config --cflags-only-I wlroots-0.20 | tr " " "\n" | grep -m1 wlroots-0.20 | sed "s/^-I//"); \
+         f="$inc/wlr/config.h"; [ -f "$f" ] && grep -q WLR_HAS_XWAYLAND "$f"'
 
     echo " Qtile image passed specific checks."
 }
