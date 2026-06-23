@@ -66,21 +66,21 @@ setup_unbound() {
 }
 
 # --- Cluster bootstrap ---
-ensure_cluster() {
+# Cluster bootstrap is owned by the `ensure-cluster` Make target.  Running
+# `minikube start` here on an already-up cluster triggers minikube's
+# "Updating the running VM" pass, which fires bursts of parallel SSH
+# connections; on fresh ISOs that have OpenSSH's PerSourcePenalties enabled
+# (default in 9.8+), some of those handshakes get throttled and the join
+# step fails with "ssh: handshake failed: connection reset by peer".  We
+# instead require the cluster to already be up and bail out otherwise.
+require_cluster_reachable() {
   local profile="${DEFAULT_MINIKUBE_PROFILE:-prod}"
-  local driver="${MINIKUBE_DRIVER:-qemu2}"
-  local cni="${MINIKUBE_CNI:-calico}"
-  if minikube status -p "$profile" 2>/dev/null | grep -q "Running"; then
-    echo "Cluster '$profile' already running. Skipping start."
-    echo
-    return
+  if ! kubectl --context "$profile" version --request-timeout=5s >/dev/null 2>&1; then
+    echo "ERROR: cluster '$profile' is not reachable."
+    echo "       Run 'make ensure-cluster' first (or 'make deploy-base' which depends on it)."
+    exit 1
   fi
-
-  echo "Starting minikube cluster (profile: $profile, driver: $driver, cni: $cni)..."
-
-  local extra_args="${MINIKUBE_EXTRA_ARGS:-}"
-  # shellcheck disable=SC2086
-  minikube start -p "$profile" --driver="$driver" --cni="$cni" $extra_args
+  echo "Cluster '$profile' reachable."
   echo
 }
 
@@ -124,7 +124,7 @@ ensure_nodes() {
 }
 
 setup_unbound
-ensure_cluster
+require_cluster_reachable
 ensure_nodes
 
 # --- Helm registry auth ---
