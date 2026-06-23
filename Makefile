@@ -5,7 +5,7 @@ ifneq (,$(wildcard ./.env))
 	export
 endif
 
-.PHONY: help build push ensure-cluster deploy-base deploy-qtile deploy-monitoring deploy-vpa deploy-infra get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all pre-commit
+.PHONY: help build push ensure-cluster harden-ssh deploy-base deploy-qtile deploy-monitoring deploy-vpa deploy-infra get-vpa-recommendations undeploy-base undeploy-qtile cleanup-base cleanup-qtile cleanup-qtile-tools test-images test-manifests test-cluster test-all pre-commit
 
 help:
 	@echo "Usage: make [target]"
@@ -14,6 +14,7 @@ help:
 	@echo "  build                     Build custom runner images"
 	@echo "  push                      Push custom runner images to GHCR"
 	@echo "  ensure-cluster            Start minikube cluster if not running (uses DEFAULTS=<path>)"
+	@echo "  harden-ssh                Disable OpenSSH PerSourcePenalties on minikube nodes"
 	@echo "  deploy-base               Deploy base runner scale set"
 	@echo "  deploy-qtile              Deploy qtile runner scale set"
 	@echo "  deploy-monitoring         Deploy lightweight Prometheus and VPA"
@@ -56,7 +57,15 @@ ensure-cluster:
 	  kubectl label node "$$profile" node-role=system --overwrite && \
 	  for node in $$(kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name | grep -v "^$$profile$$"); do \
 	    kubectl label node "$$node" node-role=worker --overwrite; \
-	  done'
+	  done && \
+	  DEFAULT_MINIKUBE_PROFILE="$$profile" ./scripts/minikube/harden-ssh.sh'
+
+# Disable OpenSSH PerSourcePenalties on every minikube node.  Safe to re-run.
+# ensure-cluster already calls this internally; the standalone target lets
+# users run it ad-hoc if a node was recreated outside of `make ensure-cluster`.
+harden-ssh:
+	@bash -c 'source $(DEFAULTS) && \
+	  DEFAULT_MINIKUBE_PROFILE="$${DEFAULT_MINIKUBE_PROFILE:-prod}" ./scripts/minikube/harden-ssh.sh'
 
 deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
