@@ -29,13 +29,18 @@ fi
 
 for node in $nodes; do
   echo "harden-ssh: configuring $node..."
+  # Restart sshd in the background after a short delay so this SSH session
+  # returns cleanly before sshd kills it -- otherwise minikube ssh exits
+  # with "remote command exited without exit status or exit signal" and we
+  # would incorrectly flag a successful operation as failed.
   minikube -p "$PROFILE" ssh -n "$node" -- '
     if grep -q "^PerSourcePenalties" /etc/ssh/sshd_config; then
-      echo "  already set";
+      echo "  already set"
     else
       echo "PerSourcePenalties no" | sudo tee -a /etc/ssh/sshd_config >/dev/null
-      sudo systemctl restart sshd
-      echo "  disabled and sshd restarted";
+      sudo nohup sh -c "sleep 2 && systemctl restart sshd" >/dev/null 2>&1 </dev/null &
+      disown
+      echo "  disabled (sshd will restart in 2s)"
     fi
   ' || echo "  WARNING: failed to harden $node (may need manual fix)" >&2
 done
