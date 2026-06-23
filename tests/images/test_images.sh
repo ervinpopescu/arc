@@ -34,7 +34,7 @@ test_qtile_specifics() {
     docker run --rm "$QTILE_IMAGE" gcc --version >/dev/null
     docker run --rm "$QTILE_IMAGE" python3.12 --version >/dev/null
     docker run --rm "$QTILE_IMAGE" uv --version >/dev/null
-    docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.19 >/dev/null
+    docker run --rm "$QTILE_IMAGE" pkg-config --modversion wlroots-0.20 >/dev/null
 
     echo " Qtile image passed specific checks."
 }
