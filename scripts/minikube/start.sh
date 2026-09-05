@@ -26,6 +26,7 @@ if ! (minikube status -p "$PROFILE" 2>/dev/null || true) | grep -q "host: Runnin
     $cni_arg \
     $nodes_arg \
     $EXTRA
+  "$(dirname "$0")/harden-ssh.sh" || true
 fi
 
 echo "Monitoring Minikube status..."
