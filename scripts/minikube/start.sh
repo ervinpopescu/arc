@@ -5,6 +5,8 @@ DEFAULTS="${1:-$(dirname "$0")/../../runners/qtile/defaults.sh}"
 # shellcheck source=/dev/null
 source "$DEFAULTS"
 
+export MINIKUBE_HOME="${MINIKUBE_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/minikube}"
+
 PROFILE="${DEFAULT_MINIKUBE_PROFILE:-prod}"
 DRIVER="${MINIKUBE_DRIVER:-kvm2}"
 CNI="${MINIKUBE_CNI:-}"
@@ -17,7 +19,7 @@ cni_arg=""
 nodes_arg=""
 [[ "$NODES" -gt 1 ]] && nodes_arg="--nodes=$NODES"
 
-if ! minikube status -p "$PROFILE" 2>/dev/null | grep -q "host: Running"; then
+if ! (minikube status -p "$PROFILE" 2>/dev/null || true) | grep -q "host: Running"; then
   # shellcheck disable=SC2086
   minikube start -p "$PROFILE" --keep-context \
     --driver="$DRIVER" \
@@ -28,7 +30,7 @@ fi
 
 echo "Monitoring Minikube status..."
 while sleep 60; do
-  if ! minikube status -p "$PROFILE" | grep -q "host: Running"; then
+  if ! (minikube status -p "$PROFILE" 2>/dev/null || true) | grep -q "host: Running"; then
     echo "Minikube cluster is not running! Exiting to trigger restart..."
     exit 1
   fi
