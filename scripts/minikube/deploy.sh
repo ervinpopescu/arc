@@ -87,7 +87,7 @@ require_cluster_reachable() {
 # --- Multi-node setup ---
 ensure_nodes() {
   local desired="${MIN_NODES:-1}"
-  local profile="${DEFAULT_MINIKUBE_PROFILE:-prod-docker}"
+  local profile="${DEFAULT_MINIKUBE_PROFILE:-prod}"
   local cni="${MINIKUBE_CNI:-}"
 
   if [[ "$desired" -le 1 ]]; then

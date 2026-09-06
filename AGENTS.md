@@ -1,6 +1,6 @@
 # ARC Configuration & Deployment
 
-ARC (Actions Runner Controller) configuration repo: custom GitHub Actions runner images, Helm values, and deployment scripts for Kubernetes (Minikube, profile `prod-docker`, docker driver).
+ARC (Actions Runner Controller) configuration repo: custom GitHub Actions runner images, Helm values, and deployment scripts for Kubernetes (Minikube, profile `prod`, kvm2 driver).
 
 ## Architecture
 
@@ -73,8 +73,8 @@ make pre-commit              # Run pre-commit hooks (shellcheck, hadolint, yaml 
 
 ## Deployment Pre-requisites
 
-- **Environment:** Arch Linux with Docker running as root.
-- **Minikube Profile:** `prod-docker` (using the `docker` driver with `--force`).
+- **Environment:** Arch Linux with rootless KVM/libvirt.
+- **Minikube Profile:** `prod` (using the `kvm2` driver).
 - **GPG Keys:** Ensure `archlinux-keyring` is updated to avoid signature trust issues during local builds.
 - **Token:** Set `GITHUB_TOKEN` in a `.env` file (gitignored) for non-interactive deployment.
 

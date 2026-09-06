@@ -124,4 +124,4 @@ kubectl --namespace monitoring port-forward svc/prometheus-operated 9090:9090
 
 ## Related Repositories
 
-- **[archnet-cfg](https://github.com/ervinpopescu/archnet-cfg)**: Host machine configuration — provides the base `minikube.service` and `port-fwd-prometheus.service` that integrate with this setup.
+- **[dots](https://github.com/ervinpopescu/dots)**: Host machine and user dotfiles configuration — provides user-level `minikube.service` and `port-fwd-prometheus.service` that integrate with this setup.
