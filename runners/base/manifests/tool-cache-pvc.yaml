@@ -7,7 +7,7 @@ metadata:
     - kubernetes.io/pvc-protection
   labels:
     app: runnerset
-  namespace: arc-runners
+  namespace: base-runners
 spec:
   accessModes:
     - ReadWriteMany

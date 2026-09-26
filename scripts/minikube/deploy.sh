@@ -280,6 +280,12 @@ RUNNER_NAMESPACE=$(prompt "Runners namespace" "$DEFAULT_RUNNERS_NAMESPACE" "RUNN
 
 kubectl get ns "$RUNNER_NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$RUNNER_NAMESPACE"
 
+# The runner values mount this PVC, so it must exist in the runner namespace before
+# the scale set creates any runner pods.
+echo "Applying tool-cache PVC..."
+kubectl apply -f "$TOOLCACHE_PVC_YAML"
+echo
+
 # --- GitHub PAT secret ---
 if [[ -z "$GITHUB_TOKEN" ]]; then
   read -rsp "GitHub PAT: " GITHUB_TOKEN
@@ -337,8 +343,6 @@ EOF
 echo " Deploying VPA targeting Shadow Deployment..."
 export RUNNER_INSTALLATION_NAME RUNNER_NAMESPACE
 envsubst < "./runners/base/manifests/vpa-runners.yaml" | kubectl apply -f -
-
-# kubectl apply -f "$TOOLCACHE_PVC_YAML"
 
 # # --- Prometheus stack ---
 # # We use a temporary file for the prometheus values since it was just a --set flag before
