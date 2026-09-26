@@ -19,7 +19,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_PACKAGES }}
         run: |
           # Get all versions of the package
-          versions=$(gh api /user/packages/container/${{ matrix.package_name }}/versions --paginate --jq '.[] | {id: .id, created_at: .created_at, tags: .metadata.container.tags}')
+          jq_filter='.[] | {id: .id, created_at: .created_at, tags: '\
+          '.metadata.container.tags}'
+          versions=$(gh api \
+            "/user/packages/container/${{ matrix.package_name }}/versions" \
+            --paginate \
+            --jq "$jq_filter")
 
           # Current date in seconds
           now=$(date +%s)
@@ -40,11 +45,15 @@ jobs:
             fi
 
             # Keep if it has important tags
-            if echo "$tags" | grep -qE "ubuntu-26.04|ubuntu-24.04"; then
-              echo "Keeping version $id (age: $((age/86400)) days) because it has important tags: $tags"
+            if echo "$tags" | grep -qE \
+              "ubuntu-26.04|ubuntu-24.04|fedora-44"; then
+              echo "Keeping version $id (age: $((age/86400)) days)" \
+              "because it has important tags: $tags"
               continue
             fi
 
             echo "Deleting version $id (age: $((age/86400)) days)..."
-            gh api --method DELETE /user/packages/container/${{ matrix.package_name }}/versions/$id || echo "   Version $id already deleted or not found, skipping."
+            package_path="/user/packages/container/${{ matrix.package_name }}"
+            gh api --method DELETE "$package_path/versions/$id" || \
+              echo "   Version $id already deleted or not found, skipping."
           done
