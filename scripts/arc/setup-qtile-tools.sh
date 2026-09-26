@@ -49,21 +49,21 @@ else
     echo " Rust nightly installation complete."
 fi
 
-# 4.1.1 Pre-install llvm-tools component for stable and nightly.
-# CI's `prepare` job runs `rustup component add llvm-tools` on every PR/branch,
+# 4.1.1 Pre-install llvm-tools-preview component for stable and nightly.
+# CI's `prepare` job runs `rustup component add llvm-tools-preview` on every PR/branch,
 # and its concurrency lock only serializes same-PR/branch runs -- concurrent
 # PRs race on the same shared RUSTUP_HOME downloads dir on the PVC, causing
 # "could not rename ... .partial file: No such file or directory" failures.
 # Installing the component here makes CI's `component add` a no-op that never
 # touches the shared downloads dir.
 for toolchain in stable nightly; do
-    echo " Checking for llvm-tools component on $toolchain..."
-    if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup component list --toolchain $toolchain --installed | grep -q '^llvm-tools'" >/dev/null 2>&1; then
-        echo " llvm-tools already installed for $toolchain."
+    echo " Checking for llvm-tools-preview component on $toolchain..."
+    if kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup component list --toolchain $toolchain --installed | grep -q '^llvm-tools-preview'" >/dev/null 2>&1; then
+        echo " llvm-tools-preview already installed for $toolchain."
     else
-        echo " Installing llvm-tools for $toolchain..."
-        kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup component add llvm-tools --toolchain $toolchain"
-        echo " llvm-tools installation complete for $toolchain."
+        echo " Installing llvm-tools-preview for $toolchain..."
+        kubectl -n "$NAMESPACE" exec "$POD_NAME" -- bash -c "/opt/hostedtoolcache/cargo/bin/rustup component add llvm-tools-preview --toolchain $toolchain"
+        echo " llvm-tools-preview installation complete for $toolchain."
     fi
 done
 
