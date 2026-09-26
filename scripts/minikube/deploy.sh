@@ -137,10 +137,20 @@ if [[ -n "$GITHUB_TOKEN" ]]; then
   echo
 fi
 
-# Ensure helm-diff plugin is installed
+# Ensure helm-diff plugin is installed from a reviewed immutable commit.
+HELM_DIFF_REPOSITORY="https://github.com/databus23/helm-diff.git"
+HELM_DIFF_COMMIT="ed6db7c19050363b8b8d79ae6b63bbc693cdedfa"
 if ! helm plugin list | grep -q "diff"; then
-  echo " Installing helm-diff plugin..."
-  helm plugin install https://github.com/databus23/helm-diff --verify=false
+  echo " Installing helm-diff plugin at $HELM_DIFF_COMMIT..."
+  helm_diff_tmp=$(mktemp -d)
+  trap 'rm -rf "$helm_diff_tmp"' EXIT
+  git -C "$helm_diff_tmp" init -q
+  git -C "$helm_diff_tmp" remote add origin "$HELM_DIFF_REPOSITORY"
+  git -C "$helm_diff_tmp" fetch --quiet --depth 1 origin "$HELM_DIFF_COMMIT"
+  git -C "$helm_diff_tmp" checkout --quiet FETCH_HEAD
+  helm plugin install "$helm_diff_tmp"
+  rm -rf "$helm_diff_tmp"
+  trap - EXIT
 fi
 
 [ -z "$DEFAULT_ARC_INSTALLATION_NAME" ] && export DEFAULT_ARC_INSTALLATION_NAME="arc"

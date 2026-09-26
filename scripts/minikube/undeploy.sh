@@ -69,6 +69,15 @@ RUNNER_INSTALLATION_NAME=$(prompt "Helm release name for runner chart" "$DEFAULT
 RUNNER_NAMESPACE=$(prompt "Runners namespace" "$DEFAULT_RUNNERS_NAMESPACE" "RUNNER_NAMESPACE")
 SECRET_NAME=$(prompt "Kubernetes secret name" "$DEFAULT_SECRET_NAME" "SECRET_NAME")
 
+# Set FORCE_UNDEPLOY=true only for deliberately noninteractive automation.
+if [[ "${FORCE_UNDEPLOY:-false}" != "true" ]]; then
+  read -rp "Proceed with removing release '$RUNNER_INSTALLATION_NAME', secret '$SECRET_NAME', and namespace '$RUNNER_NAMESPACE'? [y/N]: " confirm
+  if [[ "${confirm,,}" != "y" ]]; then
+    echo "Undeploy cancelled."
+    exit 0
+  fi
+fi
+
 helm_uninstall "$RUNNER_INSTALLATION_NAME" "$RUNNER_NAMESPACE"
 delete_secret "$SECRET_NAME" "$RUNNER_NAMESPACE"
 delete_namespace "$RUNNER_NAMESPACE"
