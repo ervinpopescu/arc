@@ -59,6 +59,6 @@ RUN groupadd -g 123 runner-group \
 WORKDIR /home/runner
 
 # Copy pre-extracted files from builder
-COPY --from=builder --chown=runner:runner /home/runner /home/runner
+COPY --from=builder --chown=runner:runner-group /home/runner /home/runner
 
 USER runner
