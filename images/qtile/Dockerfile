@@ -15,6 +15,8 @@ USER root
 ARG RUNNER_VERSION="2.338.0"
 ARG RUNNER_ARCH="x64"
 ARG RUNNER_CONTAINER_HOOKS_VERSION="0.8.1"
+ARG CARGO_BINSTALL_VERSION="1.20.1"
+ARG CARGO_BINSTALL_SHA256="350a7bd4bf083fc90e00a15b5b71cffa1c9f6f08816fd03907afbde18698bbcb"
 
 # ARC runner system deps + .NET runtime deps required by the runner binary on Fedora
 # Ref: https://github.com/actions/runner/blob/main/docs/start/envlinux.md
@@ -55,8 +57,11 @@ RUN curl -fL -o runner.tar.gz \
     && rm hooks.zip \
     && chown -R runner:runner-group /home/runner
 
-RUN curl -fL "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz" \
-    | tar xzf - -C /usr/local/bin
+RUN curl -fL -o cargo-binstall.tgz \
+    "https://github.com/cargo-bins/cargo-binstall/releases/download/v${CARGO_BINSTALL_VERSION}/cargo-binstall-x86_64-unknown-linux-gnu.tgz" \
+    && echo "${CARGO_BINSTALL_SHA256}  cargo-binstall.tgz" | sha256sum --check --status \
+    && tar xzf cargo-binstall.tgz -C /usr/local/bin \
+    && rm cargo-binstall.tgz
 
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
