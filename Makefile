@@ -1,4 +1,5 @@
 # Configs for ARC
+# shellcheck disable=SC1073,SC1065,SC1064,SC1072
 
 ifneq (,$(wildcard ./.env))
 	include .env
@@ -68,7 +69,8 @@ deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
 	minikube addons enable metrics-server -p prod
 
-VPA_DEPLOY_URL := https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy
+VPA_DEPLOY_REF := 3d7edbfc3eff24061d90b8d4b592853b806f9314
+VPA_DEPLOY_URL := https://raw.githubusercontent.com/kubernetes/autoscaler/$(VPA_DEPLOY_REF)/vertical-pod-autoscaler/deploy
 
 deploy-vpa-crds:
 	kubectl apply -f $(VPA_DEPLOY_URL)/vpa-v1-crd-gen.yaml

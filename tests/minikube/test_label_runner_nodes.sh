@@ -16,16 +16,16 @@ case "$1 $2" in
     printf 'node/prod\nnode/prod-m02\nnode/already-worker\nnode/other-system\n'
     ;;
   "get node/prod")
-    [[ "$*" == *'control-plane'* ]] && printf 'true\n' || printf 'system\n'
+    printf '%s\n' '{"metadata":{"labels":{"node-role.kubernetes.io/control-plane":"","node-role":"system"}}}'
     ;;
   "get node/prod-m02")
-    [[ "$*" == *'control-plane'* ]] && printf '\n' || printf '\n'
+    printf '%s\n' '{"metadata":{"labels":{}}}'
     ;;
   "get node/already-worker")
-    [[ "$*" == *'control-plane'* ]] && printf '\n' || printf 'worker\n'
+    printf '%s\n' '{"metadata":{"labels":{"node-role":"worker"}}}'
     ;;
   "get node/other-system")
-    [[ "$*" == *'control-plane'* ]] && printf '\n' || printf 'system\n'
+    printf '%s\n' '{"metadata":{"labels":{"node-role":"system"}}}'
     ;;
   "label node")
     printf '%s\n' "$*" >> "$LABEL_LOG"
