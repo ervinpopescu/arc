@@ -28,10 +28,18 @@ fi
 run_lint() {
     local name=$1
     local values=$2
+    local lint_output
+    local lint_status=0
     echo "--- $name ---"
     # We filter out the "cannot overwrite table with non table" warning as it is a harmless
     # side effect of overriding the default githubConfigSecret map with a string (Variation C).
-    helm lint "$CHART_PATH" --values "$values" 2>&1 | grep -v "cannot overwrite table with non table for githubConfigSecret" || true
+    if lint_output=$(helm lint "$CHART_PATH" --values "$values" 2>&1); then
+        :
+    else
+        lint_status=$?
+    fi
+    printf '%s\n' "$lint_output" | sed '/cannot overwrite table with non table for githubConfigSecret/d'
+    return "$lint_status"
 }
 
 # Check Base Runner

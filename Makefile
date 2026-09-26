@@ -92,8 +92,9 @@ test-images:
 	./tests/images/test_images.sh
 
 test-manifests:
-	chmod +x tests/manifests/lint.sh
+	chmod +x tests/manifests/lint.sh tests/manifests/lint_test.sh
 	./tests/manifests/lint.sh
+	./tests/manifests/lint_test.sh
 
 test-cluster:
 	chmod +x tests/cluster/verify_health.sh
