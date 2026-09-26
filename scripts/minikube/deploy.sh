@@ -174,17 +174,32 @@ helm_install() {
     else
       # Check for changes using helm-diff
       echo "  Checking for changes..."
+      local diff_status
       # shellcheck disable=SC2086
       if helm diff upgrade "$name" "$chart" \
         --namespace "$ns" \
         ${values:+--values "$values"} \
         $extra_args \
         --detailed-exitcode >/dev/null 2>&1; then
-        echo "   No changes detected. Skipping upgrade."
-        echo
-        return
+        diff_status=0
+      else
+        diff_status=$?
       fi
-      echo "   Changes detected. Upgrading..."
+
+      case "$diff_status" in
+        0)
+          echo "   No changes detected. Skipping upgrade."
+          echo
+          return
+          ;;
+        2)
+          echo "   Changes detected. Upgrading..."
+          ;;
+        *)
+          echo "   Helm diff failed with status $diff_status. Aborting upgrade." >&2
+          return "$diff_status"
+          ;;
+      esac
     fi
   else
     echo "   Release does not exist. Installing..."
