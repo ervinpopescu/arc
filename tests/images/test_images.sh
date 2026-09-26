@@ -46,15 +46,24 @@ test_qtile_specifics() {
 }
 
 # Run tests
+missing_images=0
+
 if docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
     test_image "$BASE_IMAGE" "Base Runner"
 else
-    echo "  Base image not found locally, skipping test. Run 'make build' first."
+    echo "  Required base image not found locally. Run 'make build' first."
+    missing_images=$((missing_images + 1))
 fi
 
 if docker image inspect "$QTILE_IMAGE" >/dev/null 2>&1; then
     test_image "$QTILE_IMAGE" "Qtile Runner"
     test_qtile_specifics
 else
-    echo "  Qtile image not found locally, skipping test. Run 'make build' first."
+    echo "  Required Qtile image not found locally. Run 'make build' first."
+    missing_images=$((missing_images + 1))
+fi
+
+if [ "$missing_images" -gt 0 ]; then
+    echo " Image tests failed: $missing_images required image(s) are missing."
+    exit 1
 fi
