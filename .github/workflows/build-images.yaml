@@ -142,7 +142,7 @@ jobs:
 
       # --- Conditional Push ---
       - name: Push Base image
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v7
         with:
           context: ./images/base
@@ -154,7 +154,7 @@ jobs:
           provenance: false
 
       - name: Push qtile CI base image
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v7
         with:
           context: /tmp/qtile-ci-base
@@ -166,7 +166,7 @@ jobs:
           provenance: false
 
       - name: Push Qtile runner image
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v7
         with:
           context: ./images/qtile
