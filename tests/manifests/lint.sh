@@ -13,6 +13,17 @@ helm pull oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scal
 
 CHART_PATH="$TEMP_CHART_DIR/gha-runner-scale-set"
 
+# Regression check: the base runner's tool-cache PVC must be in the same
+# namespace as the scale set and applied before its Helm release.
+base_pvc_namespace=$(awk '$1 == "namespace:" { print $2; exit }' runners/base/manifests/tool-cache-pvc.yaml)
+base_runner_namespace=$(awk -F'"' '/namespaceOverride:/ { print $2; exit }' runners/base/values.runner-set.yaml)
+pvc_apply_line=$(grep -nF "kubectl apply -f \"\$TOOLCACHE_PVC_YAML\"" scripts/minikube/deploy.sh | cut -d: -f1 || true)
+runner_install_line=$(grep -nF "helm_install \"\$RUNNER_INSTALLATION_NAME\"" scripts/minikube/deploy.sh | cut -d: -f1 || true)
+if [[ "$base_pvc_namespace" != "$base_runner_namespace" || -z "$pvc_apply_line" || -z "$runner_install_line" || "$pvc_apply_line" -ge "$runner_install_line" ]]; then
+    echo " Tool-cache PVC must match the base runner namespace and be applied before the runner chart."
+    exit 1
+fi
+
 # Function to run lint and filter noise
 run_lint() {
     local name=$1
