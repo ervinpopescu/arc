@@ -80,7 +80,7 @@ make cleanup-base    # Force-delete stuck namespace
 
 ## Multi-node Setup
 
-Both runner sets are configured for 2 nodes with Calico CNI by default (`MIN_NODES=2`, `MINIKUBE_CNI=calico` in `runners/*/defaults.sh`). The deploy script adds worker nodes automatically using `minikube node add`.
+Both runner sets are configured for 2 nodes with Calico CNI by default (`MIN_NODES=2`, `MINIKUBE_CNI=calico` in `runners/*/defaults.sh`). The deploy script adds worker nodes automatically using `minikube node add`. Before deploying runner sets, node roles are reconciled from Kubernetes control-plane labels: control-plane nodes are marked `node-role=system`, while non-control-plane nodes without an existing system/worker role are marked `node-role=worker`. This keeps Qtile's `nodeSelector` matched to worker nodes without relying on generated Minikube node names; system-role nodes are left untouched.
 
 To use a single node, set `MIN_NODES=1` in the relevant `defaults.sh`.
 

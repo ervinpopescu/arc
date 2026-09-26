@@ -126,6 +126,9 @@ ensure_nodes() {
 setup_unbound
 require_cluster_reachable
 ensure_nodes
+# Ensure the worker selector used by the Qtile runner set matches actual
+# non-control-plane nodes before any runner scale set is installed.
+./scripts/minikube/label-runner-nodes.sh "${DEFAULT_MINIKUBE_PROFILE:-prod}"
 
 # --- Helm registry auth ---
 if [[ -n "$GITHUB_TOKEN" ]]; then

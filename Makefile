@@ -53,11 +53,8 @@ ensure-cluster:
 	      $$nodes_arg \
 	      $${MINIKUBE_EXTRA_ARGS:-}; \
 	  fi && \
-	  echo "Labeling nodes..." && \
-	  kubectl label node "$$profile" node-role=system --overwrite && \
-	  for node in $$(kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name | grep -v "^$$profile$$"); do \
-	    kubectl label node "$$node" node-role=worker --overwrite; \
-	  done && \
+	  echo "Labeling runner nodes..." && \
+	  ./scripts/minikube/label-runner-nodes.sh "$$profile" && \
 	  DEFAULT_MINIKUBE_PROFILE="$$profile" ./scripts/minikube/harden-ssh.sh'
 
 # Disable OpenSSH PerSourcePenalties on every minikube node.  Safe to re-run.
