@@ -45,4 +45,13 @@ echo " Verifying template substitution..."
 helm template base "$CHART_PATH" --values runners/base/values.runner-set.yaml > /dev/null
 helm template qtile "$CHART_PATH" --values runners/qtile/values.runner-set.yaml > /dev/null
 
+echo " Verifying VPA infrastructure deployment..."
+VPA_DEPLOY_OUTPUT=$(make --no-print-directory -n deploy-vpa)
+for component in recommender-deployment updater-deployment; do
+    if ! grep -Fq "/$component.yaml" <<<"$VPA_DEPLOY_OUTPUT"; then
+        echo "VPA component is not managed by deploy-vpa: $component" >&2
+        exit 1
+    fi
+done
+
 echo " Manifests passed linting."

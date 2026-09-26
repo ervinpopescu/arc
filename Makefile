@@ -17,10 +17,10 @@ help:
 	@echo "  harden-ssh                Disable OpenSSH PerSourcePenalties on minikube nodes"
 	@echo "  deploy-base               Deploy base runner scale set"
 	@echo "  deploy-qtile              Deploy qtile runner scale set"
-	@echo "  deploy-monitoring         Deploy lightweight Prometheus and VPA"
+	@echo "  deploy-monitoring         Deploy lightweight Prometheus and metrics-server"
 	@echo "  deploy-vpa-crds           Install VPA CRDs"
-	@echo "  deploy-vpa                Apply VPA RBAC (runner policies applied by deploy scripts)"
-	@echo "  deploy-infra              Deploy monitoring, VPA CRDs, and VPA RBAC"
+	@echo "  deploy-vpa                Install VPA controllers and RBAC (runner policies applied by deploy scripts)"
+	@echo "  deploy-infra              Deploy monitoring, VPA controllers, CRDs, and RBAC"
 	@echo "  get-vpa-recommendations   View current VPA resource suggestions"
 	@echo "  undeploy-base             Undeploy base runner scale set"
 	@echo "  undeploy-qtile            Undeploy qtile runner scale set"
@@ -68,10 +68,15 @@ deploy-monitoring:
 	kubectl apply -f runners/base/manifests/prometheus-lite.yaml
 	minikube addons enable metrics-server -p prod
 
+VPA_DEPLOY_URL := https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy
+
 deploy-vpa-crds:
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml
+	kubectl apply -f $(VPA_DEPLOY_URL)/vpa-v1-crd-gen.yaml
 
 deploy-vpa:
+	kubectl apply -f $(VPA_DEPLOY_URL)/vpa-rbac.yaml
+	kubectl apply -f $(VPA_DEPLOY_URL)/recommender-deployment.yaml
+	kubectl apply -f $(VPA_DEPLOY_URL)/updater-deployment.yaml
 	kubectl apply -f runners/base/manifests/vpa-rbac.yaml
 
 deploy-infra: ensure-cluster deploy-monitoring deploy-vpa-crds deploy-vpa
