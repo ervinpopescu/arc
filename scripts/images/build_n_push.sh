@@ -4,7 +4,7 @@ set -eo pipefail
 # Pinned commit SHA of the Dockerfile in qtile/qtile.
 # Source: https://github.com/qtile/qtile/blob/<SHA>/Dockerfile
 # Bump this via the weekly track-qtile-dockerfile workflow when upstream changes.
-QTILE_DOCKERFILE_SHA="7ee62e1388f98fe2d61e1cc97acafe102f99d69e"
+QTILE_DOCKERFILE_SHA="6c654418c3875053f22eb9a1f81df184d5d16044"
 
 PUSH_IMAGES=false
 if [[ "$1" == "--push" ]]; then
